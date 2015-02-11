@@ -51,8 +51,11 @@ function addUser(username) {
 	userToDiv[username] = userDiv;
 }
 function removeUser(username) {
-	userToDiv[username].remove();
-	delete userToDiv[username];
+	var user = userToDiv[username];
+	if (user) {
+		user.remove();
+		delete userToDiv[username];
+	}
 }
 function getClassFromMessageType(messageType) {
 	switch(messageType) {
@@ -210,6 +213,10 @@ $(function() {
 </table>
 </div>
 <div style="clear:both"></div>
-<div><form onsubmit="return sendForm()"><input id="text" type="text" autocomplete="off" /><input type="submit" /></form><button id='soundToggle'></button></div>
+<div>
+<form onsubmit="return sendForm()">
+<input style="width:100%" id="text" type="text" autocomplete="off" />
+</form>
+<button id='soundToggle'></button></div>
 </body>
 </html>
