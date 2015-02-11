@@ -1,2 +1,2 @@
 html,body{background:#eee}
-#chat{height:480px;width:100%;background:#fff;border:2px inset}
+#chat{height:480px;width:100%;background:#fff;border:2px inset;overflow:auto}

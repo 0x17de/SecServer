@@ -11,31 +11,101 @@ function sendForm() {
 		return false;
 
 	$('#text').val("");
-	$.ajax("/send/"+encodeURIComponent(text), { dataType: "text", success: function(res) {
-		if (res != "OK")
+	$.ajax("/send/"+encodeURIComponent(text), {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			if (res != "OK")
+				alert("Error: "+res);
+		}, error: function(xhr, res) {
 			alert("Error: "+res);
-	}, error: function(xhr, res) {
-		alert("Error: "+res);
-	}});
+		}
+	});
 	$('#text').focus();
 	return false;
 }
+function number2digits(n) {
+	if (n <= 9)
+		return '0' + n;
+	return '' + n;
+}
+var lineSplitRegExp = /\r\n|\n\r|\n|\r/g; 
+var lastMessageId = "";
+function splitMessages(res) {
+	var lines = res.replace(lineSplitRegExp, "\n").split("\n");
+	lines.pop();
+	return lines;
+}
+function appendChatMessage(line) {
+	var [messageId, message] = line.split("|");
+	lastMessageId = messageId;
+	var timestamp = Number(messageId.split(":")[0]);
+	var messageTime = new Date(timestamp * 1000);
+	var messageTimeStr = number2digits(messageTime.getHours()) + ":" + number2digits(messageTime.getMinutes()) + ":" + number2digits(messageTime.getSeconds());
+	var colonPos = message.indexOf(":");
+	var user = message.substr(0, colonPos);
+	var message = message.substr(colonPos+1);
+	if (user == "") user = "System";
+	chatlog.append('<tr><td>' + messageTimeStr + "</td><td>|</td><td><b>" + user + "</b></td><td>|</td><td>" + message + '</td></tr>');
+}
+function cleanChatMessages() {
+	var chatLinesToKeep = 30;
+	var children = chatlog.find('tr');
+	if (children.length > chatLinesToKeep)
+		children.slice(0,children.length - chatLinesToKeep).remove();
+}
 function refreshChat() {
-	$.ajax("/get/", { dataType: "text", success: function(res) {
-		$('#chat').val(res);
-	}});
+	$.ajax("/get/"+lastMessageId, {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+
+			var currentScrollBottomValue = chatlog.height() - chat.height();
+			var scrollToBottom = chat.scrollTop() == currentScrollBottomValue;
+
+			$(lines).each(function(i) {
+				appendChatMessage(lines[i]);
+			});
+			cleanChatMessages();
+
+			if (scrollToBottom)
+				chat.scrollTop(chatlog.height()-chat.height());
+		}
+	});
 }
 $(function() {
-	$.ajax("/get/", { dataType: "text", success: function(res) {
-		$('#chat').val(res);
-	}});
+	chat = $('#chat');
+	chatlog = $('#chatlog');
+	$.ajax("/get/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+			$(lines).each(function(i) {
+				appendChatMessage(lines[i]);
+			});
+			cleanChatMessages();
+
+			chat.scrollTop(chatlog.height()-chat.height());
+		}
+	});
 	window.setInterval("refreshChat()", 1000);
 })
 </script>
 <link rel="stylesheet" type="text/css" href="static/style.css" />
 </head>
 <body>
-<textarea id="chat" readonly></textarea>
+<div id="chat">
+<table id="chatlog">
+</table>
+</div>
 <div><form onsubmit="return sendForm()"><input id="text" type="text" autocomplete="off" /><input type="submit" /></form></div>
 </body>
 </html>
