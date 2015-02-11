@@ -77,8 +77,13 @@ function playSound_Notification() {
 	soundNotify.play();
 }
 function appendChatMessage(line) {
-	var [messageIdStr, message] = line.split("|");
-	var [messageType, messageTime, messageId] = messageIdStr.split(":");
+	var splitLine = line.split("|");
+	var messageIdStr = splitLine[0];
+	var message = splitLine[1];
+	var splitMessageIdStr = messageIdStr.split(":");
+	var messageType = splitMessageIdStr[0];
+	var messageTime = splitMessageIdStr[1];
+	var messageId = splitMessageIdStr[2];
 	lastMessageId = messageTime + ":" + messageId;
 	var timestamp = Number(messageTime);
 	var messageTime = new Date(timestamp * 1000);
