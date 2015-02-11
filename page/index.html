@@ -220,10 +220,14 @@ $(function() {
 	$('#soundToggle').click();
 	$('#soundToggle').click();
 	updateTitle();
+	if ($('#styleSelect').val() != "basic") onStyleChange();
 	window.setInterval("refreshChat()", 1000);
-})
+});
+function onStyleChange() {
+	$('#style').prop('href','/static/'+$('#styleSelect').val()+'.css');
+}
 </script>
-<link rel="stylesheet" type="text/css" href="static/style.css" />
+<link id='style' rel="stylesheet" type="text/css" href="static/basic.css" />
 </head>
 <body>
 <div id="users">
@@ -237,6 +241,11 @@ $(function() {
 <form onsubmit="return sendForm()">
 <input style="width:100%;box-sizing:border-box" id="text" type="text" autocomplete="off" />
 </form>
-<button id='soundToggle'></button> <a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a></div>
+<button id='soundToggle'></button>
+Style: <select id='styleSelect' onchange="onStyleChange()">
+<option>basic</option>
+<option>zenburn</option>
+</select>
+<a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a></div>
 </body>
 </html>

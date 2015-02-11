@@ -1,6 +1,0 @@
-html,body{background:#eee;margin:5px;padding:0}
-#chat{height:480px;background:#fff;border:2px inset;overflow:auto}
-.msg_login,.msg_logoff{color:#820}
-.msg,.msg_username{color:#222}
-.msg_username{background:#ddf}
-#users{float:right;width:14em;overflow:auto;border:2px inset;height:480px}
