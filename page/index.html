@@ -57,14 +57,14 @@ function removeUser(username) {
 		delete userToDiv[username];
 	}
 }
-function getClassFromMessageType(messageType) {
+function getClassFromMessageType(messageType, userContainedInLine) {
 	switch(messageType) {
 		case '+':
 			return "msg_login";
 		case '-':
 			return "msg_logoff";
 		case 'm':
-			return "msg";
+			return userContainedInLine ? "msg_username" : "msg";
 		case 's':
 			return "system";
 		default:
@@ -78,6 +78,9 @@ function playSound_Notification() {
 	if (soundNotify == null)
 		soundNotify = new Audio("/static/notification.ogg");
 	soundNotify.play();
+}
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 function appendChatMessage(line) {
 	var splitLine = line.split("|");
@@ -95,6 +98,13 @@ function appendChatMessage(line) {
 	var user = message.substr(0, colonPos);
 	var message = message.substr(colonPos+1);
 
+	var userContainedInLine;
+	if (myUserName) {
+		if (message.match(new RegExp("(^|[ ])" + escapeRegExp(myUserName) + "([ ]|$)"))) {
+			userContainedInLine = true;
+		}
+	}
+
 	if (messageType == '-' || messageType == '+') {
 		if (messageType == '+')
 			addUser(user);
@@ -104,12 +114,12 @@ function appendChatMessage(line) {
 	}
 	if (user == "") user = "System";
 
-	var classType = getClassFromMessageType(messageType);
+	var classType = getClassFromMessageType(messageType, userContainedInLine);
 	chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td>" + htmlEscape(message) + '</td></tr>');
 	if (!focused) ++unreadMessageCount;
 }
 function cleanChatMessages() {
-	var chatLinesToKeep = 30;
+	var chatLinesToKeep = 300;
 	var children = chatlog.find('tr');
 	if (children.length > chatLinesToKeep)
 		children.slice(0,children.length - chatLinesToKeep).remove();
@@ -149,11 +159,21 @@ function updateTitle() {
 	else
 		document.title = '('+unreadMessageCount+') SecServer';
 }
+var myUserName = null;
 $(function() {
 	chat = $('#chat');
 	chatlog = $('#chatlog');
 	users = $('#users');
 
+	$.ajax("/whoami/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			myUserName = res;
+		}
+	});
 	$.ajax("/get/", {
 		beforeSend: function(xhr) {
 		    if (xhr.overrideMimeType)
@@ -217,6 +237,6 @@ $(function() {
 <form onsubmit="return sendForm()">
 <input style="width:100%" id="text" type="text" autocomplete="off" />
 </form>
-<button id='soundToggle'></button></div>
+<button id='soundToggle'></button> <a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a></div>
 </body>
 </html>

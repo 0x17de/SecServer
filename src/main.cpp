@@ -82,7 +82,7 @@ int main() {
 
         messages.emplace_back(user, messageText, messageType, currentTime, currentTimeIndex);
 
-        while (messages.size() > 30) messages.pop_front();
+        while (messages.size() > 100) messages.pop_front();
         lastTime = currentTime;
     };
 
@@ -173,6 +173,8 @@ int main() {
                 answer << u.name << endl;
             }
             connection->reply(200, answer.str());
+        } else if (url.substr(0, 8) == "/whoami/") {
+            connection->reply(200, user);
         } else if (url.substr(0, 8) == "/static/") {
             string fileName(url.substr(8));
             if (fileName.size() > 0 && fileName[0] != '.') {
