@@ -200,6 +200,9 @@ int main() {
                     connection->reply(400, "Bad request");
                 }
             }
+        } else {
+            answer << "Page \"" << url << "\" not found.";
+            connection->reply(404, answer.str());
         }
 
         return MHD_YES;
