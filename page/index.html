@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+<script type="text/javascript" src="static/jquery-1.11.2.min.js"></script>
+<script type="text/javascript">
+function sendForm() {
+	var text = $('#text').val();
+	if (text.trim().length == 0)
+		return false;
+
+	$('#text').val("");
+	$.ajax("/send/"+encodeURIComponent(text), { dataType: "text", success: function(res) {
+		if (res != "OK")
+			alert("Error: "+res);
+	}, error: function(xhr, res) {
+		alert("Error: "+res);
+	}});
+	$('#text').focus();
+	return false;
+}
+function refreshChat() {
+	$.ajax("/get/", { dataType: "text", success: function(res) {
+		$('#chat').val(res);
+	}});
+}
+$(function() {
+	$.ajax("/get/", { dataType: "text", success: function(res) {
+		$('#chat').val(res);
+	}});
+	window.setInterval("refreshChat()", 1000);
+})
+</script>
+<link rel="stylesheet" type="text/css" href="static/style.css" />
+</head>
+<body>
+<textarea id="chat" readonly></textarea>
+<div><form onsubmit="return sendForm()"><input id="text" type="text" autocomplete="off" /><input type="submit" /></form></div>
+</body>
+</html>
