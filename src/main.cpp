@@ -223,7 +223,7 @@ int main() {
 
             size_t currentTime = time(0);
             for (auto it = begin(users); it != end(users);) {
-                if (it->lastOnTime + 10 < currentTime) {
+                if (it->lastOnTime + 15 < currentTime) {
                     stringstream ss;
                     ss << "User \"" << it->name << "\" signed off";
                     addMessage(it->name, ss.str(), '-');
