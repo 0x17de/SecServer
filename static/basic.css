@@ -4,3 +4,6 @@ html,body{background:#eee;margin:5px;padding:0}
 .msg,.msg_username{color:#222}
 .msg_username{background:#ddf}
 #users{float:right;width:14em;overflow:auto;border:2px inset;height:480px}
+
+.readbar{height:1px;overflow:hidden;background:#ddd}
+

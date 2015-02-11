@@ -8,3 +8,5 @@ html,body{background:#3f3f3f;color:#dcdccc;margin:5px;padding:0}
 a{color:#efdcbc}
 a:visited{color:#cfac9c}
 input{color:#dcdccc;background:#4f4f4f;border:1px solid #2f2f2f}
+
+.readbar{height:1px;overflow:hidden;background:#6f6f6f}
