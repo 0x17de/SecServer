@@ -87,7 +87,15 @@ int main() {
     WebServer server(12321);
     server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data) {
         string user, pass;
-        if (!connection->requestBasicAuth(user, pass)) {
+
+        bool authSuccess = connection->requestBasicAuth(user, pass);
+        if (authSuccess) {
+            if (user == "System"
+             || user == "system"
+             || user == "")
+                authSuccess = false;
+        }
+        if (!authSuccess) {
             connection->basicAuthFailed();
             return MHD_YES;
         }
@@ -154,27 +162,28 @@ int main() {
             connection->reply(200, answer.str());
         } else if (url.substr(0, 8) == "/static/") {
             string fileName(url.substr(8));
-            bool validFile = true;
-            for (auto c : fileName) {
-                if((c > 'a' && c < 'z')
-                 ||(c > 'A' && c < 'Z')
-                 ||(c > '0' && c < '9')
-                 ||(c == '.' || c == '-'))
-                {} else {
-                    validFile = false;
-                    break;
+            if (fileName.size() > 0 && fileName[0] != '.') {
+                bool validFile = true;
+                for (auto c : fileName) {
+                    if ((c > 'a' && c < 'z')
+                            || (c > 'A' && c < 'Z')
+                            || (c > '0' && c < '9')
+                            || (c == '.' || c == '-')) {} else {
+                        validFile = false;
+                        break;
+                    }
                 }
-            }
-            if (validFile) {
-                string file;
-                if (loadFile(string("static/")+fileName, file))
-                    connection->reply(200, file);
-                else {
-                    answer << "File \"" << fileName << "\" not found.";
-                    connection->reply(404, answer.str());
+                if (validFile) {
+                    string file;
+                    if (loadFile(string("static/") + fileName, file))
+                        connection->reply(200, file);
+                    else {
+                        answer << "File \"" << fileName << "\" not found.";
+                        connection->reply(404, answer.str());
+                    }
+                } else {
+                    connection->reply(400, "Bad request");
                 }
-            } else {
-                connection->reply(400, "Bad request");
             }
         }
 
