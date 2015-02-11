@@ -7,10 +7,11 @@
 <script type="text/javascript">
 function sendForm() {
 	var text = $('#text').val();
+	$('#text').prop('readonly', true);
+
 	if (text.trim().length == 0)
 		return false;
 
-	$('#text').val("");
 	$.ajax("/send/"+encodeURIComponent(text), {
 		beforeSend: function(xhr) {
 		    if (xhr.overrideMimeType)
@@ -19,8 +20,11 @@ function sendForm() {
 		success: function(res) {
 			if (res != "OK")
 				alert("Error: "+res);
+			$('#text').val("");
+			$('#text').prop('readonly', false);
 		}, error: function(xhr, res) {
 			alert("Error: "+res);
+			$('#text').prop('readonly', false);
 		}
 	});
 	$('#text').focus();
