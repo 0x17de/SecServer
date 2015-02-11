@@ -100,7 +100,7 @@ function appendChatMessage(line) {
 
 	var userContainedInLine;
 	if (myUserName) {
-		if (message.match(new RegExp("(^|[ ])" + escapeRegExp(myUserName) + "([ ]|$)"))) {
+		if (message.match(new RegExp("(^|[ ])" + escapeRegExp(myUserName) + "([ ]|$)", "i"))) {
 			userContainedInLine = true;
 		}
 	}
