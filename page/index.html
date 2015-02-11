@@ -75,10 +75,10 @@ function getClassFromMessageType(messageType, userContainedInLine) {
 			return "msg";
 	}
 }
+var soundMentionEnabled = true;
 var soundEnabled = true;
 var soundNotify = null;
 function playSound_Notification() {
-	if (!soundEnabled) return;
 	if (soundNotify == null)
 		soundNotify = new Audio("/static/notification.ogg");
 	soundNotify.play();
@@ -121,6 +121,7 @@ function appendChatMessage(line) {
 	var classType = getClassFromMessageType(messageType, userContainedInLine);
 	chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
 	if (!focused) ++unreadMessageCount;
+	return userContainedInLine;
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 300;
@@ -141,13 +142,15 @@ function refreshChat() {
 			var scrollToBottom = chat.scrollTop() >= currentScrollBottomValue;
 
 			var oldUnreadMessageCount = unreadMessageCount;
+			var mentioned = false;
 			$(lines).each(function(i) {
-				appendChatMessage(lines[i]);
+				mentioned |= appendChatMessage(lines[i]);
 			});
 			cleanChatMessages();
 			if (oldUnreadMessageCount != unreadMessageCount) {
 				updateTitle();
-				playSound_Notification();
+				if (soundEnabled || (mentioned && soundMentionEnabled))
+					playSound_Notification();
 			}
 
 			if (scrollToBottom)
@@ -227,12 +230,21 @@ $(function() {
 	$('#soundToggle').click(function() {
 		soundEnabled = !soundEnabled;
 		if (soundEnabled)
-			$(this).html("Sound: On");
+			$(this).html("Sound on message: On");
 		else
-			$(this).html("Sound: Off");
+			$(this).html("Sound on message: Off");
+	});
+	$('#soundMentionToggle').click(function() {
+		soundMentionEnabled = !soundMentionEnabled;
+		if (soundMentionEnabled)
+			$(this).html("Sound on mention: On");
+		else
+			$(this).html("Sound on mention: Off");
 	});
 	$('#soundToggle').click();
 	$('#soundToggle').click();
+	$('#soundMentionToggle').click();
+	$('#soundMentionToggle').click();
 	updateTitle();
 	if ($('#styleSelect').val() != "basic") onStyleChange();
 	window.setInterval("refreshChat()", 1000);
@@ -256,6 +268,7 @@ function onStyleChange() {
 <input style="width:100%;box-sizing:border-box" id="text" type="text" autocomplete="off" />
 </form>
 <button id='soundToggle'></button>
+<button id='soundMentionToggle'></button>
 Style: <select id='styleSelect' onchange="onStyleChange()">
 <option>basic</option>
 <option>zenburn</option>
