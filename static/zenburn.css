@@ -1,0 +1,10 @@
+html,body{background:#3f3f3f;color:#dcdccc;margin:5px;padding:0}
+#chat{height:480px;background:#4f4f4f;border:1px solid #2f2f2f;overflow:auto}
+.msg_login,.msg_logoff{color:#ececcc}
+.msg,.msg_username{color:#dcdccc}
+.msg_username{background:#1f1f1f}
+#users{background:#4f4f4f;color:#dcdccc;float:right;width:14em;overflow:auto;border:1px solid #2f2f2f;height:480px}
+
+a{color:#efdcbc}
+a:visited{color:#cfac9c}
+input{color:#dcdccc;background:#4f4f4f;border:1px solid #2f2f2f}
