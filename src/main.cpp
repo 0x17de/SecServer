@@ -167,10 +167,11 @@ int main() {
             if (fileName.size() > 0 && fileName[0] != '.') {
                 bool validFile = true;
                 for (auto c : fileName) {
-                    if ((c > 'a' && c < 'z')
-                            || (c > 'A' && c < 'Z')
-                            || (c > '0' && c < '9')
-                            || (c == '.' || c == '-')) {} else {
+                    if ((c >= 'a' && c <= 'z')
+                            || (c >= 'A' && c <= 'Z')
+                            || (c >= '0' && c <= '9')
+                            || (c == '.' || c == '-')) {
+                    } else {
                         validFile = false;
                         break;
                     }
@@ -184,6 +185,7 @@ int main() {
                         connection->reply(404, answer.str());
                     }
                 } else {
+                    cout << "Bad request: " << fileName << endl;
                     connection->reply(400, "Bad request");
                 }
             }

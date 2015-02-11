@@ -53,6 +53,14 @@ function getClassFromMessageType(messageType) {
 			return "system";
 	}
 }
+var soundEnabled = true;
+var soundNotify = null;
+function playSound_Notification() {
+	if (!soundEnabled) return;
+	if (soundNotify == null)
+		soundNotify = new Audio("/static/notification.ogg");
+	soundNotify.play();
+}
 function appendChatMessage(line) {
 	var [messageIdStr, message] = line.split("|");
 	var [messageType, messageTime, messageId] = messageIdStr.split(":");
@@ -97,8 +105,10 @@ function refreshChat() {
 				appendChatMessage(lines[i]);
 			});
 			cleanChatMessages();
-			if (oldUnreadMessageCount != unreadMessageCount)
+			if (oldUnreadMessageCount != unreadMessageCount) {
 				updateTitle();
+				playSound_Notification();
+			}
 
 			if (scrollToBottom)
 				chat.scrollTop(chatlog.height()-chat.height());
@@ -140,6 +150,15 @@ $(function() {
 		focused = true;
 		updateTitle();
 	});
+	$('#soundToggle').click(function() {
+		soundEnabled = !soundEnabled;
+		if (soundEnabled)
+			$(this).html("Sound: On");
+		else
+			$(this).html("Sound: Off");
+	});
+	$('#soundToggle').click();
+	$('#soundToggle').click();
 	updateTitle();
 	window.setInterval("refreshChat()", 1000);
 })
@@ -151,6 +170,6 @@ $(function() {
 <table id="chatlog">
 </table>
 </div>
-<div><form onsubmit="return sendForm()"><input id="text" type="text" autocomplete="off" /><input type="submit" /></form></div>
+<div><form onsubmit="return sendForm()"><input id="text" type="text" autocomplete="off" /><input type="submit" /></form><button id='soundToggle'></button></div>
 </body>
 </html>
