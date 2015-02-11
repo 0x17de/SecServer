@@ -96,6 +96,12 @@ int main() {
              || user == "system"
              || user == "")
                 authSuccess = false;
+            for(char c : user) {
+                if (c == ':') {
+                    authSuccess = false;
+                    break;
+                }
+            }
         }
         if (!authSuccess) {
             connection->basicAuthFailed();
@@ -161,6 +167,11 @@ int main() {
             }
 
             answer << "OK";
+            connection->reply(200, answer.str());
+        } else if (url.substr(0, 7) == "/users/") {
+            for (User& u : users) {
+                answer << u.name << endl;
+            }
             connection->reply(200, answer.str());
         } else if (url.substr(0, 8) == "/static/") {
             string fileName(url.substr(8));
