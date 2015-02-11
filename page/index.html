@@ -38,6 +38,9 @@ function splitMessages(res) {
 	lines.pop();
 	return lines;
 }
+function htmlEscape(a) {
+	return $('<div/>').text(a).html();
+}
 function appendChatMessage(line) {
 	var [messageId, message] = line.split("|");
 	lastMessageId = messageId;
@@ -48,7 +51,7 @@ function appendChatMessage(line) {
 	var user = message.substr(0, colonPos);
 	var message = message.substr(colonPos+1);
 	if (user == "") user = "System";
-	chatlog.append('<tr><td>' + messageTimeStr + "</td><td>|</td><td><b>" + user + "</b></td><td>|</td><td>" + message + '</td></tr>');
+	chatlog.append('<tr><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td>" + htmlEscape(message) + '</td></tr>');
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 30;
