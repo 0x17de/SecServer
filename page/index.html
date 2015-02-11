@@ -41,17 +41,38 @@ function splitMessages(res) {
 function htmlEscape(a) {
 	return $('<div/>').text(a).html();
 }
+function getClassFromMessageType(messageType) {
+	switch(messageType) {
+		case '+':
+			return "msg_login";
+		case '-':
+			return "msg_logoff";
+		case 'm':
+			return "msg";
+		case 's':
+			return "system";
+	}
+}
 function appendChatMessage(line) {
-	var [messageId, message] = line.split("|");
-	lastMessageId = messageId;
-	var timestamp = Number(messageId.split(":")[0]);
+	var [messageIdStr, message] = line.split("|");
+	var [messageType, messageTime, messageId] = messageIdStr.split(":");
+	lastMessageId = messageTime + ":" + messageId;
+	var timestamp = Number(messageTime);
 	var messageTime = new Date(timestamp * 1000);
 	var messageTimeStr = number2digits(messageTime.getHours()) + ":" + number2digits(messageTime.getMinutes()) + ":" + number2digits(messageTime.getSeconds());
 	var colonPos = message.indexOf(":");
 	var user = message.substr(0, colonPos);
 	var message = message.substr(colonPos+1);
+
+	if (messageType == '-' || messageType == '+') {
+		// @TODO: userlist actions
+		user = "";
+	}
 	if (user == "") user = "System";
-	chatlog.append('<tr><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td>" + htmlEscape(message) + '</td></tr>');
+
+	var classType = getClassFromMessageType(messageType);
+	chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td>" + htmlEscape(message) + '</td></tr>');
+	if (!focused) ++unreadMessageCount;
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 30;
@@ -71,15 +92,26 @@ function refreshChat() {
 			var currentScrollBottomValue = chatlog.height() - chat.height();
 			var scrollToBottom = chat.scrollTop() == currentScrollBottomValue;
 
+			var oldUnreadMessageCount = unreadMessageCount;
 			$(lines).each(function(i) {
 				appendChatMessage(lines[i]);
 			});
 			cleanChatMessages();
+			if (oldUnreadMessageCount != unreadMessageCount)
+				updateTitle();
 
 			if (scrollToBottom)
 				chat.scrollTop(chatlog.height()-chat.height());
 		}
 	});
+}
+var unreadMessageCount = 0;
+var focused = true;
+function updateTitle() {
+	if (focused)
+		document.title = 'SecServer';
+	else
+		document.title = '('+unreadMessageCount+') SecServer';
 }
 $(function() {
 	chat = $('#chat');
@@ -99,6 +131,16 @@ $(function() {
 			chat.scrollTop(chatlog.height()-chat.height());
 		}
 	});
+	$(window).blur(function() {
+		focused = false;
+		updateTitle();
+	});
+	$(window).focus(function() {
+		unreadMessageCount = 0;
+		focused = true;
+		updateTitle();
+	});
+	updateTitle();
 	window.setInterval("refreshChat()", 1000);
 })
 </script>

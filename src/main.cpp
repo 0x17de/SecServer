@@ -45,9 +45,10 @@ struct User {
 };
 
 struct Message {
-    Message(const string& user, const string& message, size_t lastMessageTime, size_t lastMessageId) :
+    Message(const string& user, const string& message, char messageType, size_t lastMessageTime, size_t lastMessageId) :
     user(user),
     message(message),
+    messageType(messageType),
     lastMessageTime(lastMessageTime),
     lastMessageId(lastMessageId)
     {
@@ -55,6 +56,7 @@ struct Message {
 
     string user = "";
     string message = "";
+    char messageType = 'm';
     size_t lastMessageTime = 0;
     size_t lastMessageId = 0;
 };
@@ -69,7 +71,7 @@ int main() {
     list<Message> messages;
     list<User> users;
 
-    auto addMessage = [&messages](const string& user, const string& messageText) {
+    auto addMessage = [&messages](const string& user, const string& messageText, char messageType) {
         size_t currentTime = time(0);
         static size_t lastTime = time(0);
         static size_t currentTimeIndex = 0;
@@ -78,7 +80,7 @@ int main() {
         else
             currentTimeIndex = 0;
 
-        messages.emplace_back(user, messageText, currentTime, currentTimeIndex);
+        messages.emplace_back(user, messageText, messageType, currentTime, currentTimeIndex);
 
         while (messages.size() > 30) messages.pop_front();
         lastTime = currentTime;
@@ -108,7 +110,7 @@ int main() {
 
             stringstream ss;
             ss << "User \"" << user << "\" logged on";
-            addMessage("", ss.str());
+            addMessage(user, ss.str(), '+');
         } else {
             currentUser = &*userIt;
         }
@@ -147,13 +149,13 @@ int main() {
                 }
             }
             for (; it != messages.end(); ++it) {
-                answer << it->lastMessageTime << ":" << it->lastMessageId << "|" << it -> user << ":" << it->message << endl;
+                answer << it->messageType << ":" << it->lastMessageTime << ":" << it->lastMessageId << "|" << it -> user << ":" << it->message << endl;
             }
             connection->reply(200, answer.str());
         } else if (url.substr(0, 6) == "/send/") {
             if (!strcmp(method, "GET")) {
                 string messageText(url.substr(6));
-                addMessage(user, messageText);
+                addMessage(user, messageText, 'm');
             } else {
                 // @TODO: POST method
             }
@@ -206,7 +208,7 @@ int main() {
                 if (it->lastOnTime + 10 < currentTime) {
                     stringstream ss;
                     ss << "User \"" << it->name << "\" signed off";
-                    addMessage("", ss.str());
+                    addMessage(it->name, ss.str(), '-');
                     it = users.erase(it);
                 } else {
                     ++it;
