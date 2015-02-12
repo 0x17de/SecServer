@@ -166,6 +166,8 @@ int main() {
             string pageTemplate;
             loadFile("page/index.html", pageTemplate);
             connection->reply(200, pageTemplate);
+        } else if (url == "/logout/") {
+            connection->basicAuthFailed("SecServer", "Logout complete.");
         } else if (url == "/chat/") {
             string pageTemplate;
             loadFile("page/chat.html", pageTemplate);

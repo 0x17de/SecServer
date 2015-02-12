@@ -149,6 +149,8 @@ function appendChatMessage(line, status) {
 	var classType = getClassFromMessageType(messageType, status);
 	if (command == "me") {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</td></tr>');
+	} else if (command == "mono") {
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'><tt><pre>" + message.substr(command.length+2) + '</pre></tt></td></tr>');
 	} else {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + message + '</td></tr>');
 	}

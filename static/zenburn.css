@@ -1,4 +1,5 @@
 html,body{background:#3f3f3f;color:#dcdccc;margin:5px;padding:0}
+pre{margin:0}
 #chat{height:480px;background:#4f4f4f;border:1px solid #2f2f2f;overflow:auto}
 .msg_login,.msg_logoff{color:#cc8c7c}
 .msg,.msg_all,.msg_username{color:#dcdccc}
