@@ -67,6 +67,8 @@ function getClassFromMessageType(messageType, userContainedInLine) {
 			return "msg_login";
 		case '-':
 			return "msg_logoff";
+		case 'w':
+			return "msg_whisper";
 		case 'm':
 			return userContainedInLine ? "msg_username" : "msg";
 		case 's':
@@ -281,6 +283,8 @@ Style: <select id='styleSelect' onchange="onStyleChange()">
 <option>basic</option>
 <option>zenburn</option>
 </select>
-<a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a></div>
+<a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a>
+Try '/help' for commands.
+</div>
 </body>
 </html>

@@ -29,6 +29,23 @@ bool loadFile(const std::string& fileName, std::string& into) {
     return true;
 }
 
+struct Message {
+    Message(const string& user, const string& message, char messageType, size_t lastMessageTime, size_t lastMessageId) :
+            user(user),
+            message(message),
+            messageType(messageType),
+            lastMessageTime(lastMessageTime),
+            lastMessageId(lastMessageId)
+    {
+    }
+
+    string user = "";
+    string message = "";
+    char messageType = 'm';
+    size_t lastMessageTime = 0;
+    size_t lastMessageId = 0;
+};
+
 struct User {
     User(const string& name) :
     name(name)
@@ -42,23 +59,8 @@ struct User {
 
     string name = "";
     size_t lastOnTime = 0;
-};
 
-struct Message {
-    Message(const string& user, const string& message, char messageType, size_t lastMessageTime, size_t lastMessageId) :
-    user(user),
-    message(message),
-    messageType(messageType),
-    lastMessageTime(lastMessageTime),
-    lastMessageId(lastMessageId)
-    {
-    }
-
-    string user = "";
-    string message = "";
-    char messageType = 'm';
-    size_t lastMessageTime = 0;
-    size_t lastMessageId = 0;
+    list<Message> directMessages;
 };
 
 int main() {
@@ -84,6 +86,18 @@ int main() {
 
         while (messages.size() > 100) messages.pop_front();
         lastTime = currentTime;
+    };
+    auto addDirectMessage = [&users,&messages](User* currentUser, const string& from, const string& to, const string& messageText, char messageType) {
+        auto userIt = find_if(begin(users), end(users), [&](User& loggedUser) { return loggedUser.name == to; });
+        if (userIt != end(users)) {
+            size_t currentTime = time(0);
+            userIt->directMessages.emplace_back(from, messageText, messageType, currentTime, 0);
+            if (currentUser) {
+                stringstream ss;
+                ss << "> " << to;
+                currentUser->directMessages.emplace_back(ss.str(), messageText, messageType, currentTime, 0);
+            }
+        }
     };
 
     WebServer server(12321);
@@ -154,14 +168,51 @@ int main() {
                     break;
                 }
             }
+
+            auto writeMessage = [&answer] (list<Message>::iterator it) {
+                answer << it->messageType << ":" << it->lastMessageTime << ":" << it->lastMessageId << "|" << it->user << ":" << it->message << endl;
+            };
+
+            auto dmIt = begin(currentUser->directMessages);
             for (; it != messages.end(); ++it) {
-                answer << it->messageType << ":" << it->lastMessageTime << ":" << it->lastMessageId << "|" << it -> user << ":" << it->message << endl;
+                while (dmIt != end(currentUser->directMessages) && dmIt->lastMessageTime < it->lastMessageTime) {
+                    writeMessage(dmIt);
+                    dmIt = currentUser->directMessages.erase(dmIt);
+                }
+                writeMessage(it);
+            }
+            while (dmIt != end(currentUser->directMessages)) {
+                writeMessage(dmIt);
+                dmIt = currentUser->directMessages.erase(dmIt);
             }
             connection->reply(200, answer.str());
         } else if (url.substr(0, 6) == "/send/") {
             if (!strcmp(method, "GET")) {
                 string messageText(url.substr(6));
-                addMessage(user, messageText, 'm');
+                int commandLength;
+                string command = "";
+                if (messageText[0] == '/') {
+                    for (commandLength = 1; commandLength < messageText.size(); ++commandLength) {
+                        if (messageText[commandLength] < 'a' || messageText[commandLength] > 'z')
+                            break;
+                    }
+                    --commandLength; // started at 1
+                    command = messageText.substr(1, commandLength);
+                }
+                if (command == "help") {
+                    addDirectMessage(0, "", user, "== This is the help page ==", 'w');
+                    addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
+                    addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
+                    addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
+                } else if (command == "dm") {
+                    istringstream is(messageText.substr(commandLength+2));
+                    string to;
+                    getline(is, to, ' ');
+                    if (messageText.size() > commandLength+3+to.size())
+                        addDirectMessage(currentUser, user, to, messageText.substr(commandLength+2+to.size()), 'w');
+                } else {
+                    addMessage(user, messageText, 'm');
+                }
             } else {
                 // @TODO: POST method
             }
