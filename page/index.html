@@ -94,7 +94,7 @@ function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 // See http://regexlib.com/REDetails.aspx?regexp_id=2841
-var urlRegEx = /((ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*))/g
+var urlRegEx = /((ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$!#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\!\:\\\&quot;\'\,\|\~\;]*))/g
 function replaceUrls(msg) {
 	return msg.replace(urlRegEx, '<a target="_blank" href="$1">$1</a>');
 }
