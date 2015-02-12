@@ -90,6 +90,11 @@ function playSound_Notification() {
 function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
+// See http://regexlib.com/REDetails.aspx?regexp_id=2841
+var urlRegEx = /((ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*))/g
+function replaceUrls(msg) {
+	return msg.replace(urlRegEx, '<a target="_blank" href="$1">$1</a>');
+}
 function appendChatMessage(line, status) {
 	if (!status) status = {};
 	var splitLine = line.split("|");
@@ -132,11 +137,14 @@ function appendChatMessage(line, status) {
 	}
 	if (user == "") user = "System";
 
+	message = htmlEscape(message);
+	message = replaceUrls(message);
+
 	var classType = getClassFromMessageType(messageType, userContainedInLine);
 	if (command == "me") {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + htmlEscape(message.substr(command.length+2)) + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</td></tr>');
 	} else {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + message + '</td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
 	status.mentioned = userContainedInLine;
