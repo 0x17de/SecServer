@@ -123,7 +123,7 @@ int main() {
                         if ((c >= 'a' && c <= 'z')
                         || (c >= 'A' && c <= 'Z')
                         || (c >= '0' && c <= '9')
-                        || allowedCharacters.find(c)) {
+                        || allowedCharacters.find(c) != string::npos) {
                             // Ok.
                         } else {
                             authSuccess = false;
