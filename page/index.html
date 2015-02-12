@@ -168,7 +168,7 @@ function refreshChat() {
 			var lines = splitMessages(res);
 
 			var currentScrollBottomValue = chatlog.height() - chat.height();
-			var scrollToBottom = chat.scrollTop() >= currentScrollBottomValue;
+			var scrollToBottom = chat.scrollTop()+10/*tolerance*/ >= currentScrollBottomValue;
 
 			var oldUnreadMessageCount = unreadMessageCount;
 			var status = {};
@@ -191,6 +191,11 @@ function refreshChat() {
 
 			if (scrollToBottom)
 				chat.scrollTop(chatlog.height()-chat.height());
+
+			window.setTimeout("refreshChat()", 1000);
+		},
+		error: function(xhr, res) {
+			window.setTimeout("refreshChat()", 3000);
 		}
 	});
 }
@@ -209,6 +214,44 @@ function updateTitle() {
 }
 var myUserName = null;
 var lastReadBar = null;
+function loadInitialChatlog() {
+	$.ajax("/get/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+			$(lines).each(function(i) {
+				appendChatMessage(lines[i]);
+			});
+			cleanChatMessages();
+
+			chat.scrollTop(chatlog.height()-chat.height());
+			window.setTimeout("refreshChat()", 1000);
+		},
+		error: function(xhr, res) {
+			window.setTimeout("loadInitialChatlog()", 3000);
+		}
+	});
+}
+function loadInitialUsers() {
+	$.ajax("/users/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+			$(lines).each(function(i) {
+				addUser(lines[i]);
+			});
+		},
+		error: function(res) {
+			window.setTimeout("loadInitialUsers()", 3000);
+		}
+	});
+}
 $(function() {
 	chat = $('#chat');
 	chatlog = $('#chatlog');
@@ -223,33 +266,8 @@ $(function() {
 			myUserName = res;
 		}
 	});
-	$.ajax("/get/", {
-		beforeSend: function(xhr) {
-		    if (xhr.overrideMimeType)
-		        xhr.overrideMimeType("text/plain");
-		},
-		success: function(res) {
-			var lines = splitMessages(res);
-			$(lines).each(function(i) {
-				appendChatMessage(lines[i]);
-			});
-			cleanChatMessages();
-
-			chat.scrollTop(chatlog.height()-chat.height());
-		}
-	});
-	$.ajax("/users/", {
-		beforeSend: function(xhr) {
-		    if (xhr.overrideMimeType)
-		        xhr.overrideMimeType("text/plain");
-		},
-		success: function(res) {
-			var lines = splitMessages(res);
-			$(lines).each(function(i) {
-				addUser(lines[i]);
-			});
-		}
-	});
+	loadInitialUsers();
+	loadInitialChatlog();
 	$(window).blur(function() {
 		focused = false;
 		unfocusedMention = false;
@@ -316,7 +334,6 @@ $(function() {
 	$('#soundLogOnOffToggle').click();
 	updateTitle();
 	if ($('#styleSelect').val() != "basic") onStyleChange();
-	window.setInterval("refreshChat()", 1000);
 });
 function onStyleChange() {
 	$('#style').prop('href','/static/'+$('#styleSelect').val()+'.css');
