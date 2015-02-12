@@ -102,6 +102,10 @@ function appendChatMessage(line) {
 	var user = message.substr(0, colonPos);
 	var message = message.substr(colonPos+1);
 
+	var command = null;
+	var match = message.match(/^\/([a-zA-Z]+)/);
+	if (match) command = match[1];
+
 	var userContainedInLine;
 	if (myUserName) {
 		if (message.match(new RegExp("(^|[@ ])" + escapeRegExp(myUserName) + "([: ]|$)", "i"))) {
@@ -119,7 +123,11 @@ function appendChatMessage(line) {
 	if (user == "") user = "System";
 
 	var classType = getClassFromMessageType(messageType, userContainedInLine);
-	chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
+	if (command == "me") {
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><b>*** " + htmlEscape(user) + "</b> " + htmlEscape(message.substr(command.length+2)) + '</td></tr>');
+	} else {
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
+	}
 	if (!focused) ++unreadMessageCount;
 	return userContainedInLine;
 }
