@@ -6,13 +6,26 @@
 
 #include <functional>
 #include <string>
+#include <sstream>
 
+
+class User;
 
 class Connection {
     MHD_Connection* connection;
+    MHD_PostProcessor* pp = 0;
 public:
     Connection(MHD_Connection* connection);
+    ~Connection();
+
+    std::string type = "";
+    std::stringstream postData;
+    size_t dataRead = 0;
+    size_t contentLength = 200; // we limit to 200 bytes
+    User* currentUser = 0;
+
     void reply(int status, const std::string& data);
+    void processPostMessage(const char* upload_data, long unsigned int* upload_data_size);
     void basicAuthFailed();
     bool requestBasicAuth(std::string& user, std::string& pass);
 };
@@ -28,7 +41,7 @@ public:
     bool start(const char key[], const char cert[]);
     void stop();
 
-    std::function<int(Connection* connection, const char* url, const char* method, const char* version, const char* upload_data)> onRequest;
+    std::function<int(Connection* connection, const char* url, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size)> onRequest;
     std::function<void(Connection* connection)> onComplete;
 };
 

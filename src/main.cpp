@@ -101,42 +101,45 @@ int main() {
     };
 
     WebServer server(12321);
-    server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data) {
+    server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size) {
         string user, pass;
+        stringstream answer;
 
-        bool authSuccess = connection->requestBasicAuth(user, pass);
-        if (authSuccess) {
-            if (user == "System"
-             || user == "system"
-             || user == "")
-                authSuccess = false;
-            for(char c : user) {
-                if (c == ':') {
+        User*& currentUser = connection->currentUser;
+        if (currentUser) {
+            user = currentUser->name;
+        } else {
+            bool authSuccess = connection->requestBasicAuth(user, pass);
+            if (authSuccess) {
+                if (user == "System"
+                        || user == "system"
+                        || user == "")
                     authSuccess = false;
-                    break;
+                for (char c : user) {
+                    if (c == ':') {
+                        authSuccess = false;
+                        break;
+                    }
                 }
             }
-        }
-        if (!authSuccess) {
-            connection->basicAuthFailed();
-            return MHD_YES;
-        }
+            if (!authSuccess) {
+                connection->basicAuthFailed();
+                return MHD_YES;
+            }
 
-        User* currentUser;
-        auto userIt = find_if(begin(users), end(users), [&](User& loggedUser) { return loggedUser.name == user; });
-        if (userIt == users.end()) {
-            users.emplace_back(user);
-            currentUser = &users.back();
+            auto userIt = find_if(begin(users), end(users), [&](User& loggedUser) { return loggedUser.name == user; });
+            if (userIt == users.end()) {
+                users.emplace_back(user);
+                currentUser = &users.back();
 
-            stringstream ss;
-            ss << "User \"" << user << "\" logged on";
-            addMessage(user, ss.str(), '+');
-        } else {
-            currentUser = &*userIt;
+                stringstream ss;
+                ss << "User \"" << user << "\" logged on";
+                addMessage(user, ss.str(), '+');
+            } else {
+                currentUser = &*userIt;
+            }
         }
         currentUser->updateTime();
-
-        stringstream answer;
 
         string url(cUrl);
         if (url == "/") {
@@ -187,39 +190,44 @@ int main() {
             }
             connection->reply(200, answer.str());
         } else if (url.substr(0, 6) == "/send/") {
-            if (!strcmp(method, "GET")) {
-                string messageText(url.substr(6));
-                int commandLength;
-                string command = "";
-                if (messageText[0] == '/') {
-                    for (commandLength = 1; commandLength < messageText.size(); ++commandLength) {
-                        if (messageText[commandLength] < 'a' || messageText[commandLength] > 'z')
-                            break;
+            if (!strcmp(method, "POST")) {
+                size_t oldDataRead = connection->dataRead;
+                connection->processPostMessage(upload_data, upload_data_size);
+                if (oldDataRead > 0 && oldDataRead == connection->dataRead) {
+                    string messageText(connection->postData.str());
+
+                    int commandLength;
+                    string command = "";
+                    if (messageText[0] == '/') {
+                        for (commandLength = 1; commandLength < messageText.size(); ++commandLength) {
+                            if (messageText[commandLength] < 'a' || messageText[commandLength] > 'z')
+                                break;
+                        }
+                        --commandLength; // started at 1
+                        command = messageText.substr(1, commandLength);
                     }
-                    --commandLength; // started at 1
-                    command = messageText.substr(1, commandLength);
-                }
-                if (command == "help") {
-                    addDirectMessage(0, "", user, "== This is the help page ==", 'w');
-                    addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
-                    addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
-                    addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
-                    addDirectMessage(0, "", user, " @all > Notify all users", 'w');
-                } else if (command == "dm") {
-                    istringstream is(messageText.substr(commandLength+2));
-                    string to;
-                    getline(is, to, ' ');
-                    if (messageText.size() > commandLength+3+to.size())
-                        addDirectMessage(currentUser, user, to, messageText.substr(commandLength+2+to.size()), 'w');
-                } else {
-                    addMessage(user, messageText, 'm');
+                    if (command == "help") {
+                        addDirectMessage(0, "", user, "== This is the help page ==", 'w');
+                        addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
+                        addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
+                        addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
+                        addDirectMessage(0, "", user, " @all > Notify all users", 'w');
+                    } else if (command == "dm") {
+                        istringstream is(messageText.substr(commandLength + 2));
+                        string to;
+                        getline(is, to, ' ');
+                        if (messageText.size() > commandLength + 3 + to.size())
+                            addDirectMessage(currentUser, user, to, messageText.substr(commandLength + 2 + to.size()), 'w');
+                    } else {
+                        addMessage(user, messageText, 'm');
+                    }
+                    answer << "OK";
+                    connection->reply(200, answer.str());
                 }
             } else {
-                // @TODO: POST method
+                answer << "Use POST request or restart client.";
+                connection->reply(400, answer.str());
             }
-
-            answer << "OK";
-            connection->reply(200, answer.str());
         } else if (url.substr(0, 7) == "/users/") {
             for (User& u : users) {
                 answer << u.name << endl;
@@ -261,7 +269,7 @@ int main() {
 
         return MHD_YES;
     };
-    server.onComplete = [](Connection* connection) {
+    server.onComplete = [&](Connection* connection) {
     };
 
     if (server.start(key.c_str(), cert.c_str())) {

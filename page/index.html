@@ -12,7 +12,9 @@ function sendForm() {
 	if (text.trim().length == 0)
 		return false;
 
-	$.ajax("/send/"+encodeURIComponent(text).replace(".", "%2E"), {
+	$.ajax("/send/", {
+		type: 'POST',
+		data: text,
 		beforeSend: function(xhr) {
 		    if (xhr.overrideMimeType)
 		        xhr.overrideMimeType("text/plain");
