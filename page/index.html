@@ -173,6 +173,9 @@ function refreshChat() {
 				appendChatMessage(lines[i], status);
 			});
 			cleanChatMessages();
+
+			if (!focused && status.mentioned) unfocusedMention = true;
+
 			if (oldUnreadMessageCount != unreadMessageCount) {
 				updateTitle();
 				if ((status.message && soundEnabled) || (status.dm && soundDmEnabled) || (status.mentioned && soundMentionEnabled) || (status.logOnOff && soundLogOnOffEnabled))
@@ -185,12 +188,17 @@ function refreshChat() {
 	});
 }
 var unreadMessageCount = 0;
+var unfocusedMention = false;
 var focused = true;
 function updateTitle() {
 	if (focused)
 		document.title = 'SecServer';
-	else
-		document.title = '('+unreadMessageCount+') SecServer';
+	else {
+		if (unfocusedMention)
+			document.title = '('+unreadMessageCount+')! SecServer';
+		else
+			document.title = '('+unreadMessageCount+') SecServer';
+	}
 }
 var myUserName = null;
 var lastReadBar = null;
@@ -237,6 +245,7 @@ $(function() {
 	});
 	$(window).blur(function() {
 		focused = false;
+		unfocusedMention = false;
 		updateTitle();
 		var top = chat.scrollTop();
 		var height = chatlog.height();
