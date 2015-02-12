@@ -58,6 +58,7 @@ struct User {
     }
 
     string name = "";
+    string ip = "";
     size_t lastOnTime = 0;
 
     list<Message> directMessages;
@@ -102,59 +103,72 @@ int main() {
 
     WebServer server(12321);
     server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size) {
+        string url(cUrl);
+
         string user, pass;
         stringstream answer;
 
-        User*& currentUser = connection->currentUser;
-        if (currentUser) {
-            user = currentUser->name;
+        if (url == "/"
+        || url.substr(0,8) == "/static/") {
+            // No login required
         } else {
-            bool authSuccess = connection->requestBasicAuth(user, pass);
-            if (authSuccess) {
-                if (user.size() == 0
-                || user.size() > 15
-                || user == "System"
-                || user == "system"
-                || user == "") {
-                    authSuccess = false;
-                } else {
-                    static const string allowedCharacters("/.,<>?\\[]!#$%^*()_+=-");
-                    for (char c : user) {
-                        if ((c >= 'a' && c <= 'z')
-                        || (c >= 'A' && c <= 'Z')
-                        || (c >= '0' && c <= '9')
-                        || allowedCharacters.find(c) != string::npos) {
-                            // Ok.
-                        } else {
-                            authSuccess = false;
-                            break;
+            User *&currentUser = connection->currentUser;
+            if (!currentUser) {
+                bool authSuccess = connection->requestBasicAuth(user, pass);
+                if (authSuccess) {
+                    if (user.size() == 0
+                            || user.size() > 15
+                            || user == "System"
+                            || user == "system"
+                            || user == "") {
+                        authSuccess = false;
+                    } else {
+                        static const string allowedCharacters("/.,<>?\\[]!#$%^*()_+=-");
+                        for (char c : user) {
+                            if ((c >= 'a' && c <= 'z')
+                                    || (c >= 'A' && c <= 'Z')
+                                    || (c >= '0' && c <= '9')
+                                    || allowedCharacters.find(c) != string::npos) {
+                                // Ok.
+                            } else {
+                                authSuccess = false;
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            if (!authSuccess) {
-                connection->basicAuthFailed("SecServer", "Login failed. Choosing this username is forbidden.");
-                return MHD_YES;
-            }
+                if (!authSuccess) {
+                    connection->basicAuthFailed("SecServer", "Login failed. Choosing this username is forbidden.");
+                    return MHD_YES;
+                }
 
-            auto userIt = find_if(begin(users), end(users), [&](User& loggedUser) { return loggedUser.name == user; });
-            if (userIt == users.end()) {
-                users.emplace_back(user);
-                currentUser = &users.back();
+                auto userIt = find_if(begin(users), end(users), [&](User &loggedUser) {
+                    return loggedUser.name == user;
+                });
+                if (userIt == users.end()) {
+                    users.emplace_back(user);
+                    currentUser = &users.back();
 
-                stringstream ss;
-                ss << "User \"" << user << "\" logged on";
-                addMessage(user, ss.str(), '+');
-            } else {
-                currentUser = &*userIt;
+                    stringstream ss;
+                    ss << "User \"" << user << "\" logged on";
+                    addMessage(user, ss.str(), '+');
+                } else {
+                    currentUser = &*userIt;
+                }
             }
+            user = currentUser->name;
+            currentUser->ip = connection->ip;
+            currentUser->updateTime();
         }
-        currentUser->updateTime();
+        User *&currentUser = connection->currentUser;
 
-        string url(cUrl);
         if (url == "/") {
             string pageTemplate;
             loadFile("page/index.html", pageTemplate);
+            connection->reply(200, pageTemplate);
+        } else if (url == "/chat/") {
+            string pageTemplate;
+            loadFile("page/chat.html", pageTemplate);
             connection->reply(200, pageTemplate);
         } else if (url.substr(0, 5) == "/get/") {
             size_t messageTime, messageId;

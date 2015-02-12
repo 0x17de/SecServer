@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>SecServer</title>
+<script type="text/javascript" src="/static/jquery-1.11.2.min.js"></script>
+<script type="text/javascript">
+function sendForm() {
+	var text = $('#text').val();
+	$('#text').prop('readonly', true);
+
+	if (text.trim().length == 0)
+		return false;
+
+	$.ajax("/send/", {
+		type: 'POST',
+		data: text,
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			if (res != "OK")
+				alert("Error: "+res);
+			$('#text').val("");
+			$('#text').prop('readonly', false);
+		}, error: function(xhr, res) {
+			alert("Error: "+res);
+			$('#text').prop('readonly', false);
+		}
+	});
+	$('#text').focus();
+	return false;
+}
+function number2digits(n) {
+	if (n <= 9)
+		return '0' + n;
+	return '' + n;
+}
+var lineSplitRegExp = /\r\n|\n\r|\n|\r/g; 
+var lastMessageId = "";
+function splitMessages(res) {
+	var lines = res.replace(lineSplitRegExp, "\n").split("\n");
+	lines.pop();
+	return lines;
+}
+function htmlEscape(a) {
+	return $('<div/>').text(a).html();
+}
+var users = null;
+var userToDiv = {};
+function addUser(username) {
+	if (userToDiv[username]) return;
+	var userDiv = $('<div/>');
+	userDiv.text(username);
+	users.append(userDiv);
+	userToDiv[username] = userDiv;
+}
+function removeUser(username) {
+	var user = userToDiv[username];
+	if (user) {
+		user.remove();
+		delete userToDiv[username];
+	}
+}
+function getClassFromMessageType(messageType, status) {
+	switch(messageType) {
+		case '+':
+			return "msg_login";
+		case '-':
+			return "msg_logoff";
+		case 'w':
+			return "msg_whisper";
+		case 'm':
+			return status.mentioned ? "msg_username" : status.allMentioned ? "msg_all" : "msg";
+		case 's':
+			return "system";
+		default:
+			return "msg";
+	}
+}
+var soundLogOnOffEnabled = false;
+var soundAllEnabled = true;
+var soundDmEnabled = true;
+var soundMentionEnabled = true;
+var soundEnabled = true;
+var soundNotify = null;
+function playSound_Notification() {
+	if (soundNotify == null)
+		soundNotify = new Audio("/static/notification.ogg");
+	soundNotify.play();
+}
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+// See http://regexlib.com/REDetails.aspx?regexp_id=2841
+var urlRegEx = /((ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$!#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\!\:\\\&quot;\'\,\|\~\;]*))/g
+function replaceUrls(msg) {
+	return msg.replace(urlRegEx, '<a target="_blank" href="$1">$1</a>');
+}
+function appendChatMessage(line, status) {
+	if (!status) status = {};
+	var splitLine = line.split("|");
+	var messageIdStr = splitLine.shift();
+	var message = splitLine.join("|");
+	var splitMessageIdStr = messageIdStr.split(":");
+	var messageType = splitMessageIdStr[0];
+	var messageTime = splitMessageIdStr[1];
+	var messageId = splitMessageIdStr[2];
+	if (messageType != 'w')
+		lastMessageId = messageTime + ":" + messageId;
+	var timestamp = Number(messageTime);
+	var messageTime = new Date(timestamp * 1000);
+	var messageTimeStr = number2digits(messageTime.getHours()) + ":" + number2digits(messageTime.getMinutes()) + ":" + number2digits(messageTime.getSeconds());
+	var colonPos = message.indexOf(":");
+	var user = message.substr(0, colonPos);
+	var message = message.substr(colonPos+1);
+
+	var command = null;
+	var match = message.match(/^\/([a-zA-Z]+)/);
+	if (match) command = match[1];
+
+	if (myUserName) {
+		if (message.match(new RegExp("(^|[@ ])" + escapeRegExp(myUserName) + "([: ]|$)", "i"))) {
+			status.mentioned = true;
+		}
+	}
+	if (message.match(new RegExp("(^|[ ])@all([: ]|$)", "i"))) {
+		status.allMentioned = true;
+	}
+
+	if (messageType == '-' || messageType == '+') {
+		if (messageType == '+')
+			addUser(user);
+		else
+			removeUser(user);
+		status.logOnOff = true;
+		user = "";
+	} else if (messageType == 'w') {
+		status.dm = true;
+	} else {
+		status.message = true;
+	}
+	if (user == "") user = "System";
+
+	message = htmlEscape(message);
+	message = replaceUrls(message);
+
+	var classType = getClassFromMessageType(messageType, status);
+	if (command == "me") {
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</td></tr>');
+	} else {
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + message + '</td></tr>');
+	}
+	if (!focused) ++unreadMessageCount;
+}
+function cleanChatMessages() {
+	var chatLinesToKeep = 300;
+	var children = chatlog.find('tr');
+	if (children.length > chatLinesToKeep)
+		children.slice(0,children.length - chatLinesToKeep).remove();
+}
+function refreshChat() {
+	$.ajax("/get/"+lastMessageId, {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+
+			var currentScrollBottomValue = chatlog.height() - chat.height();
+			var scrollToBottom = chat.scrollTop()+10/*tolerance*/ >= currentScrollBottomValue;
+
+			var oldUnreadMessageCount = unreadMessageCount;
+			var status = {};
+			$(lines).each(function(i) {
+				appendChatMessage(lines[i], status);
+			});
+			cleanChatMessages();
+
+			if (!focused && status.mentioned) unfocusedMention = true;
+
+			if (oldUnreadMessageCount != unreadMessageCount) {
+				updateTitle();
+				if ((status.message && soundEnabled)
+				|| (status.dm && soundDmEnabled)
+				|| (status.mentioned && soundMentionEnabled)
+				|| (status.logOnOff && soundLogOnOffEnabled)
+				|| (status.allMentioned && soundAllEnabled))
+					playSound_Notification();
+			}
+
+			if (scrollToBottom)
+				chat.scrollTop(chatlog.height()-chat.height());
+
+			window.setTimeout("refreshChat()", 1000);
+		},
+		error: function(xhr, res) {
+			window.setTimeout("refreshChat()", 3000);
+		}
+	});
+}
+var unreadMessageCount = 0;
+var unfocusedMention = false;
+var focused = true;
+function updateTitle() {
+	if (focused)
+		document.title = 'SecServer';
+	else {
+		if (unfocusedMention)
+			document.title = '('+unreadMessageCount+')! SecServer';
+		else
+			document.title = '('+unreadMessageCount+') SecServer';
+	}
+}
+var myUserName = null;
+var lastReadBar = null;
+function loadInitialChatlog() {
+	$.ajax("/get/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+			$(lines).each(function(i) {
+				appendChatMessage(lines[i]);
+			});
+			cleanChatMessages();
+
+			chat.scrollTop(chatlog.height()-chat.height());
+			window.setTimeout("refreshChat()", 1000);
+		},
+		error: function(xhr, res) {
+			window.setTimeout("loadInitialChatlog()", 3000);
+		}
+	});
+}
+function loadInitialUsers() {
+	$.ajax("/users/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			var lines = splitMessages(res);
+			$(lines).each(function(i) {
+				addUser(lines[i]);
+			});
+		},
+		error: function(res) {
+			window.setTimeout("loadInitialUsers()", 3000);
+		}
+	});
+}
+$(function() {
+	chat = $('#chat');
+	chatlog = $('#chatlog');
+	users = $('#users');
+
+	$.ajax("/whoami/", {
+		beforeSend: function(xhr) {
+		    if (xhr.overrideMimeType)
+		        xhr.overrideMimeType("text/plain");
+		},
+		success: function(res) {
+			myUserName = res;
+		}
+	});
+	loadInitialUsers();
+	loadInitialChatlog();
+	$(window).blur(function() {
+		focused = false;
+		unfocusedMention = false;
+		updateTitle();
+		var top = chat.scrollTop();
+		var height = chatlog.height();
+		if (lastReadBar) {
+			lastReadBar.remove();
+		} else {
+			lastReadBar = $('<tr><td class="readbar" colspan="5"></td></tr>');
+		}
+		chatlog.append(lastReadBar);
+		chat.scrollTop(top+chatlog.height()-height);
+	});
+	$(window).focus(function() {
+		unreadMessageCount = 0;
+		focused = true;
+		updateTitle();
+	});
+	$('#soundToggle').click(function() {
+		soundEnabled = !soundEnabled;
+		if (soundEnabled)
+			$(this).html("Message: On");
+		else
+			$(this).html("Message: Off");
+	});
+	$('#soundMentionToggle').click(function() {
+		soundMentionEnabled = !soundMentionEnabled;
+		if (soundMentionEnabled)
+			$(this).html("Mention: On");
+		else
+			$(this).html("Mention: Off");
+	});
+	$('#soundDmToggle').click(function() {
+		soundDmEnabled = !soundDmEnabled;
+		if (soundDmEnabled)
+			$(this).html("Direct message: On");
+		else
+			$(this).html("Direct message: Off");
+	});
+	$('#soundAllToggle').click(function() {
+		soundAllEnabled = !soundAllEnabled;
+		if (soundAllEnabled)
+			$(this).html("@all: On");
+		else
+			$(this).html("@all: Off");
+	});
+	$('#soundLogOnOffToggle').click(function() {
+		soundLogOnOffEnabled = !soundLogOnOffEnabled;
+		if (soundLogOnOffEnabled)
+			$(this).html("Login/-out: On");
+		else
+			$(this).html("Login/-out: Off");
+	});
+	$('#soundToggle').click();
+	$('#soundToggle').click();
+	$('#soundMentionToggle').click();
+	$('#soundMentionToggle').click();
+	$('#soundDmToggle').click();
+	$('#soundDmToggle').click();
+	$('#soundAllToggle').click();
+	$('#soundAllToggle').click();
+	$('#soundLogOnOffToggle').click();
+	$('#soundLogOnOffToggle').click();
+	updateTitle();
+	if ($('#styleSelect').val() != "basic") onStyleChange();
+});
+function onStyleChange() {
+	$('#style').prop('href','/static/'+$('#styleSelect').val()+'.css');
+}
+</script>
+<link id='style' rel="stylesheet" type="text/css" href="/static/basic.css" />
+</head>
+<body>
+<div id="users">
+</div>
+<div id="chat">
+<table id="chatlog" width="100%">
+</table>
+</div>
+<div style="clear:both"></div>
+<div>
+<form onsubmit="return sendForm()">
+<input style="width:100%;box-sizing:border-box" id="text" type="text" autocomplete="off" />
+</form>
+Sound on: <button id='soundToggle'></button>
+<button id='soundMentionToggle'></button>
+<button id='soundDmToggle'></button>
+<button id='soundAllToggle'></button>
+<button id='soundLogOnOffToggle'></button>
+</div>
+<div>
+Style: <select id='styleSelect' onchange="onStyleChange()">
+<option>basic</option>
+<option>zenburn</option>
+</select>
+<a href="https://github.com/icetruckde/SecServer" target="_blank">Project on GitHub</a>
+Try '/help' for commands.
+</div>
+</body>
+</html>
