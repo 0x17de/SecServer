@@ -99,8 +99,8 @@ function replaceUrls(msg) {
 function appendChatMessage(line, status) {
 	if (!status) status = {};
 	var splitLine = line.split("|");
-	var messageIdStr = splitLine[0];
-	var message = splitLine[1];
+	var messageIdStr = splitLine.shift();
+	var message = splitLine.join("|");
 	var splitMessageIdStr = messageIdStr.split(":");
 	var messageType = splitMessageIdStr[0];
 	var messageTime = splitMessageIdStr[1];
