@@ -134,9 +134,9 @@ function appendChatMessage(line, status) {
 
 	var classType = getClassFromMessageType(messageType, userContainedInLine);
 	if (command == "me") {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><b>*** " + htmlEscape(user) + "</b> " + htmlEscape(message.substr(command.length+2)) + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + htmlEscape(message.substr(command.length+2)) + '</td></tr>');
 	} else {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
 	status.mentioned = userContainedInLine;
