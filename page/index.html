@@ -77,6 +77,8 @@ function getClassFromMessageType(messageType, userContainedInLine) {
 			return "msg";
 	}
 }
+var soundLogOnOffEnabled = false;
+var soundDmEnabled = true;
 var soundMentionEnabled = true;
 var soundEnabled = true;
 var soundNotify = null;
@@ -88,7 +90,8 @@ function playSound_Notification() {
 function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
-function appendChatMessage(line) {
+function appendChatMessage(line, status) {
+	if (!status) status = {};
 	var splitLine = line.split("|");
 	var messageIdStr = splitLine[0];
 	var message = splitLine[1];
@@ -120,7 +123,12 @@ function appendChatMessage(line) {
 			addUser(user);
 		else
 			removeUser(user);
+		status.logOnOff = true;
 		user = "";
+	} else if (messageType == 'w') {
+		status.dm = true;
+	} else {
+		status.message = true;
 	}
 	if (user == "") user = "System";
 
@@ -131,7 +139,7 @@ function appendChatMessage(line) {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><b>" + htmlEscape(user) + "</b></td><td>|</td><td width='100%'>" + htmlEscape(message) + '</td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
-	return userContainedInLine;
+	status.mentioned = userContainedInLine;
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 300;
@@ -152,14 +160,14 @@ function refreshChat() {
 			var scrollToBottom = chat.scrollTop() >= currentScrollBottomValue;
 
 			var oldUnreadMessageCount = unreadMessageCount;
-			var mentioned = false;
+			var status = {};
 			$(lines).each(function(i) {
-				mentioned |= appendChatMessage(lines[i]);
+				appendChatMessage(lines[i], status);
 			});
 			cleanChatMessages();
 			if (oldUnreadMessageCount != unreadMessageCount) {
 				updateTitle();
-				if (soundEnabled || (mentioned && soundMentionEnabled))
+				if ((status.message && soundEnabled) || (status.dm && soundDmEnabled) || (status.mentioned && soundMentionEnabled) || (status.logOnOff && soundLogOnOffEnabled))
 					playSound_Notification();
 			}
 
@@ -240,21 +248,39 @@ $(function() {
 	$('#soundToggle').click(function() {
 		soundEnabled = !soundEnabled;
 		if (soundEnabled)
-			$(this).html("Sound on message: On");
+			$(this).html("Message: On");
 		else
-			$(this).html("Sound on message: Off");
+			$(this).html("Message: Off");
 	});
 	$('#soundMentionToggle').click(function() {
 		soundMentionEnabled = !soundMentionEnabled;
 		if (soundMentionEnabled)
-			$(this).html("Sound on mention: On");
+			$(this).html("Mention: On");
 		else
-			$(this).html("Sound on mention: Off");
+			$(this).html("Mention: Off");
+	});
+	$('#soundDmToggle').click(function() {
+		soundDmEnabled = !soundDmEnabled;
+		if (soundDmEnabled)
+			$(this).html("Direct message: On");
+		else
+			$(this).html("Direct message: Off");
+	});
+	$('#soundLogOnOffToggle').click(function() {
+		soundLogOnOffEnabled = !soundLogOnOffEnabled;
+		if (soundLogOnOffEnabled)
+			$(this).html("Login/-out: On");
+		else
+			$(this).html("Login/-out: Off");
 	});
 	$('#soundToggle').click();
 	$('#soundToggle').click();
 	$('#soundMentionToggle').click();
 	$('#soundMentionToggle').click();
+	$('#soundDmToggle').click();
+	$('#soundDmToggle').click();
+	$('#soundLogOnOffToggle').click();
+	$('#soundLogOnOffToggle').click();
 	updateTitle();
 	if ($('#styleSelect').val() != "basic") onStyleChange();
 	window.setInterval("refreshChat()", 1000);
@@ -277,8 +303,12 @@ function onStyleChange() {
 <form onsubmit="return sendForm()">
 <input style="width:100%;box-sizing:border-box" id="text" type="text" autocomplete="off" />
 </form>
-<button id='soundToggle'></button>
+Sound on: <button id='soundToggle'></button>
 <button id='soundMentionToggle'></button>
+<button id='soundDmToggle'></button>
+<button id='soundLogOnOffToggle'></button>
+</div>
+<div>
 Style: <select id='styleSelect' onchange="onStyleChange()">
 <option>basic</option>
 <option>zenburn</option>
