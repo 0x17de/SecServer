@@ -19,7 +19,7 @@ Connection::Connection(MHD_Connection *connection) :
         const MHD_ConnectionInfo* info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
         sockaddr *sa = info->client_addr;
 
-        void* addr;
+        void* addr = 0;
         size_t bufferLength;
         if (sa->sa_family == AF_INET) {
             sockaddr_in* s = (sockaddr_in*)sa;
@@ -30,11 +30,14 @@ Connection::Connection(MHD_Connection *connection) :
             addr = &s->sin6_addr;
             bufferLength = INET6_ADDRSTRLEN;
         }
-        vector<char> buffer(bufferLength);
 
-        const char *result = inet_ntop(sa->sa_family, addr, buffer.data(), bufferLength);
-        if (result != 0)
-            ip = string(result);
+        if (addr) {
+            vector<char> buffer(bufferLength);
+
+            const char *result = inet_ntop(sa->sa_family, addr, buffer.data(), bufferLength);
+            if (result != 0)
+                ip = string(result);
+        }
     }
 }
 
