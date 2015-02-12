@@ -5,6 +5,9 @@
 #include <vector>
 #include <sstream>
 
+#include <sys/types.h>
+#include <arpa/inet.h>
+
 
 using namespace std;
 
@@ -12,7 +15,27 @@ using namespace std;
 Connection::Connection(MHD_Connection *connection) :
         connection(connection)
 {
+    {
+        const MHD_ConnectionInfo* info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
+        sockaddr *sa = info->client_addr;
 
+        void* addr;
+        size_t bufferLength;
+        if (sa->sa_family == AF_INET) {
+            sockaddr_in* s = (sockaddr_in*)sa;
+            addr = &s->sin_addr;
+            bufferLength = INET_ADDRSTRLEN;
+        } else if (sa->sa_family == AF_INET6) {
+            sockaddr_in6* s = (sockaddr_in6*)sa;
+            addr = &s->sin6_addr;
+            bufferLength = INET6_ADDRSTRLEN;
+        }
+        vector<char> buffer(bufferLength);
+
+        const char *result = inet_ntop(sa->sa_family, addr, buffer.data(), bufferLength);
+        if (result != 0)
+            ip = string(result);
+    }
 }
 
 Connection::~Connection()

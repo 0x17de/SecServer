@@ -19,6 +19,7 @@ public:
     ~Connection();
 
     std::string type = "";
+    std::string ip = "";
     std::stringstream postData;
     size_t dataRead = 0;
     size_t contentLength = 200; // we limit to 200 bytes
