@@ -104,7 +104,8 @@ function appendChatMessage(line, status) {
 	var messageType = splitMessageIdStr[0];
 	var messageTime = splitMessageIdStr[1];
 	var messageId = splitMessageIdStr[2];
-	lastMessageId = messageTime + ":" + messageId;
+	if (messageType != 'w')
+		lastMessageId = messageTime + ":" + messageId;
 	var timestamp = Number(messageTime);
 	var messageTime = new Date(timestamp * 1000);
 	var messageTimeStr = number2digits(messageTime.getHours()) + ":" + number2digits(messageTime.getMinutes()) + ":" + number2digits(messageTime.getSeconds());
