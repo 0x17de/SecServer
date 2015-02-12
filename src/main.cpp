@@ -204,6 +204,7 @@ int main() {
                     addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
                     addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
                     addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
+                    addDirectMessage(0, "", user, " @all > Notify all users", 'w');
                 } else if (command == "dm") {
                     istringstream is(messageText.substr(commandLength+2));
                     string to;

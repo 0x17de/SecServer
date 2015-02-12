@@ -61,7 +61,7 @@ function removeUser(username) {
 		delete userToDiv[username];
 	}
 }
-function getClassFromMessageType(messageType, userContainedInLine) {
+function getClassFromMessageType(messageType, status) {
 	switch(messageType) {
 		case '+':
 			return "msg_login";
@@ -70,7 +70,7 @@ function getClassFromMessageType(messageType, userContainedInLine) {
 		case 'w':
 			return "msg_whisper";
 		case 'm':
-			return userContainedInLine ? "msg_username" : "msg";
+			return status.mentioned ? "msg_username" : status.allMentioned ? "msg_all" : "msg";
 		case 's':
 			return "system";
 		default:
@@ -78,6 +78,7 @@ function getClassFromMessageType(messageType, userContainedInLine) {
 	}
 }
 var soundLogOnOffEnabled = false;
+var soundAllEnabled = true;
 var soundDmEnabled = true;
 var soundMentionEnabled = true;
 var soundEnabled = true;
@@ -117,11 +118,13 @@ function appendChatMessage(line, status) {
 	var match = message.match(/^\/([a-zA-Z]+)/);
 	if (match) command = match[1];
 
-	var userContainedInLine;
 	if (myUserName) {
 		if (message.match(new RegExp("(^|[@ ])" + escapeRegExp(myUserName) + "([: ]|$)", "i"))) {
-			userContainedInLine = true;
+			status.mentioned = true;
 		}
+	}
+	if (message.match(new RegExp("(^|[ ])@all([: ]|$)", "i"))) {
+		status.allMentioned = true;
 	}
 
 	if (messageType == '-' || messageType == '+') {
@@ -141,14 +144,13 @@ function appendChatMessage(line, status) {
 	message = htmlEscape(message);
 	message = replaceUrls(message);
 
-	var classType = getClassFromMessageType(messageType, userContainedInLine);
+	var classType = getClassFromMessageType(messageType, status);
 	if (command == "me") {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</td></tr>');
 	} else {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + message + '</td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
-	status.mentioned = userContainedInLine;
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 300;
@@ -179,7 +181,11 @@ function refreshChat() {
 
 			if (oldUnreadMessageCount != unreadMessageCount) {
 				updateTitle();
-				if ((status.message && soundEnabled) || (status.dm && soundDmEnabled) || (status.mentioned && soundMentionEnabled) || (status.logOnOff && soundLogOnOffEnabled))
+				if ((status.message && soundEnabled)
+				|| (status.dm && soundDmEnabled)
+				|| (status.mentioned && soundMentionEnabled)
+				|| (status.logOnOff && soundLogOnOffEnabled)
+				|| (status.allMentioned && soundAllEnabled))
 					playSound_Notification();
 			}
 
@@ -284,6 +290,13 @@ $(function() {
 		else
 			$(this).html("Direct message: Off");
 	});
+	$('#soundAllToggle').click(function() {
+		soundAllEnabled = !soundAllEnabled;
+		if (soundAllEnabled)
+			$(this).html("@all: On");
+		else
+			$(this).html("@all: Off");
+	});
 	$('#soundLogOnOffToggle').click(function() {
 		soundLogOnOffEnabled = !soundLogOnOffEnabled;
 		if (soundLogOnOffEnabled)
@@ -297,6 +310,8 @@ $(function() {
 	$('#soundMentionToggle').click();
 	$('#soundDmToggle').click();
 	$('#soundDmToggle').click();
+	$('#soundAllToggle').click();
+	$('#soundAllToggle').click();
 	$('#soundLogOnOffToggle').click();
 	$('#soundLogOnOffToggle').click();
 	updateTitle();
@@ -324,6 +339,7 @@ function onStyleChange() {
 Sound on: <button id='soundToggle'></button>
 <button id='soundMentionToggle'></button>
 <button id='soundDmToggle'></button>
+<button id='soundAllToggle'></button>
 <button id='soundLogOnOffToggle'></button>
 </div>
 <div>
