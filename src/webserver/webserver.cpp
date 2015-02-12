@@ -26,17 +26,6 @@ void Connection::reply(int status, const std::string &data) {
     MHD_destroy_response(response);
 }
 
-static int iterate_post(
-        void *t, enum MHD_ValueKind kind, const char *key,
-        const char *filename, const char *content_type,
-        const char *transfer_encoding, const char *data, uint64_t off,
-        size_t size) {
-    string newData((char*)data, size);
-    cout << "New: " << newData << endl;
-    ((Connection*)t)->postData << newData;
-    return MHD_YES;
-};
-
 void Connection::processPostMessage(const char* upload_data, long unsigned int* upload_data_size) {
     if (*upload_data_size > 0) {
         postData << string(upload_data, *upload_data_size);
@@ -45,10 +34,12 @@ void Connection::processPostMessage(const char* upload_data, long unsigned int* 
     }
 }
 
-void Connection::basicAuthFailed() {
-    const string& page = "<html><body>User auth failed.</body></html>";
-    MHD_Response* response = MHD_create_response_from_buffer(page.size(), (void*)page.c_str(), MHD_RESPMEM_PERSISTENT);
-    MHD_queue_basic_auth_fail_response(connection, "myRealm", response);
+void Connection::basicAuthFailed(const std::string& realm, const std::string& reason) {
+    stringstream page;
+    page << "<html><body>" << reason << "</body></html>";
+    string pageStr = page.str();
+    MHD_Response* response = MHD_create_response_from_buffer(pageStr.size(), (void*)pageStr.c_str(), MHD_RESPMEM_PERSISTENT);
+    MHD_queue_basic_auth_fail_response(connection, realm.c_str(), response);
     MHD_destroy_response(response);
 }
 

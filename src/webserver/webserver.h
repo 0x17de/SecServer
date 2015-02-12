@@ -26,7 +26,7 @@ public:
 
     void reply(int status, const std::string& data);
     void processPostMessage(const char* upload_data, long unsigned int* upload_data_size);
-    void basicAuthFailed();
+    void basicAuthFailed(const std::string& realm, const std::string& reason);
     bool requestBasicAuth(std::string& user, std::string& pass);
 };
 

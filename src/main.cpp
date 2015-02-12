@@ -111,19 +111,23 @@ int main() {
         } else {
             bool authSuccess = connection->requestBasicAuth(user, pass);
             if (authSuccess) {
-                if (user == "System"
-                        || user == "system"
-                        || user == "")
+                if (user.size() == 0
+                || user.size() > 15
+                || user == "System"
+                || user == "system"
+                || user == "") {
                     authSuccess = false;
-                for (char c : user) {
-                    if (c == ':') {
-                        authSuccess = false;
-                        break;
+                } else {
+                    for (char c : user) {
+                        if (c == ':') {
+                            authSuccess = false;
+                            break;
+                        }
                     }
                 }
             }
             if (!authSuccess) {
-                connection->basicAuthFailed();
+                connection->basicAuthFailed("SecServer", "Login failed. Choosing this username is forbidden.");
                 return MHD_YES;
             }
 
