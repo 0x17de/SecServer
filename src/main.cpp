@@ -69,9 +69,40 @@ struct User {
 int main() {
     signal(SIGINT, sigInt);
 
+
+
+    // Ini variables including their default values
+    int port = 12321;
+    string keyPath = "cert/newkey.pem", certPath = "cert/newcert.pem";
+    bool sslEnabled = true;
+    {
+        IniParser iniParser("config.ini");
+        auto globalSectionIt = iniParser.sections.find("");
+        if (globalSectionIt != end(iniParser.sections)) {
+            auto portIt = globalSectionIt->second.data.find("port");
+            if (portIt != end(globalSectionIt->second.data))
+                port = stoll(portIt->second);
+            auto sslIt = globalSectionIt->second.data.find("ssl");
+            if (sslIt != end(globalSectionIt->second.data))
+                sslEnabled = sslIt->second != "false";
+            auto keyIt = globalSectionIt->second.data.find("key");
+            if (keyIt != end(globalSectionIt->second.data))
+                keyPath = keyIt->second;
+            auto certIt = globalSectionIt->second.data.find("cert");
+            if (certIt != end(globalSectionIt->second.data))
+                certPath = certIt->second;
+        }
+    }
+    cout << "Starting on port " << port << endl;
+    cout << "Ssl " << (sslEnabled ? "enabled" : "disabled") << endl;
+
     string key, cert;
-    loadFile("cert/newkey.pem", key);
-    loadFile("cert/newcert.pem", cert);
+    if (sslEnabled) {
+        cout << "Loading keyfile: " << keyPath << endl;
+        loadFile(keyPath, key);
+        cout << "Loading certfile: " << certPath << endl;
+        loadFile(certPath, cert);
+    }
 
     list<Message> messages;
     list<User> users;
@@ -102,20 +133,6 @@ int main() {
             }
         }
     };
-
-    // Ini variables including their default values
-    int port = 12321;
-    {
-        IniParser iniParser("config.ini");
-        auto globalSectionIt = iniParser.sections.find("");
-        if (globalSectionIt != end(iniParser.sections)) {
-            auto portIt = globalSectionIt->second.data.find("port");
-            if (portIt != end(globalSectionIt->second.data)) {
-                port = stoll(portIt->second);
-            }
-        }
-    }
-    cout << "Starting on port " << port << endl;
 
     WebServer server(port);
     server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size) {
@@ -316,7 +333,7 @@ int main() {
     server.onComplete = [&](Connection* connection) {
     };
 
-    if (server.start(key.c_str(), cert.c_str())) {
+    if (server.start(sslEnabled, key.c_str(), cert.c_str())) {
         FILE *f = fopen("stopserver.deleteme", "w+");
         fclose(f);
         while (running) {

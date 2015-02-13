@@ -157,18 +157,28 @@ void WebServer::onComplete_(void *t, struct MHD_Connection *connection, void **c
     }
 }
 
-bool WebServer::start(const char key[], const char cert[]) {
+bool WebServer::start(bool sslEnabled, const char key[], const char cert[]) {
     // MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY
-    if (!MHD_is_feature_supported(MHD_FEATURE_SSL))
+    if (sslEnabled && !MHD_is_feature_supported(MHD_FEATURE_SSL)) {
         cerr << "No SSL support" << endl;
-    daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY|MHD_USE_SSL, port, nullptr, nullptr, &onRequest_, (void*)this,
-            MHD_OPTION_NOTIFY_COMPLETED, &onComplete_, (void*)this,
-            MHD_OPTION_HTTPS_MEM_KEY, key,
-            MHD_OPTION_HTTPS_MEM_CERT, cert,
-            MHD_OPTION_END);
+        return false;
+    }
+    int flags = MHD_USE_SELECT_INTERNALLY;
+    if (sslEnabled) {
+        daemon = MHD_start_daemon(flags|MHD_USE_SSL, port, nullptr, nullptr, &onRequest_, (void *) this,
+                MHD_OPTION_NOTIFY_COMPLETED, &onComplete_, (void *) this,
+                MHD_OPTION_HTTPS_MEM_KEY, key,
+                MHD_OPTION_HTTPS_MEM_CERT, cert,
+                MHD_OPTION_END);
+    } else {
+        daemon = MHD_start_daemon(flags, port, nullptr, nullptr, &onRequest_, (void *) this,
+                MHD_OPTION_NOTIFY_COMPLETED, &onComplete_, (void *) this,
+                MHD_OPTION_END);
+    }
     return daemon != nullptr;
 }
 
 void WebServer::stop() {
-    MHD_stop_daemon(daemon);
+    if (daemon)
+        MHD_stop_daemon(daemon);
 }

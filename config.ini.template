@@ -1,1 +1,4 @@
 port=12321
+ssl=true
+key=cert/newkey.pem
+cert=cert/newcert.pem

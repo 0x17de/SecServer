@@ -44,7 +44,7 @@ class WebServer {
     static void onComplete_(void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe);
 public:
     WebServer(int port);
-    bool start(const char key[], const char cert[]);
+    bool start(bool sslEnabled, const char key[], const char cert[]);
     void stop();
 
     std::function<int(Connection* connection, const char* url, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size)> onRequest;
