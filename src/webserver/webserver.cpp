@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstring>
 #include <sstream>
 
 #include <sys/types.h>
@@ -15,35 +16,52 @@ using namespace std;
 Connection::Connection(MHD_Connection *connection) :
         connection(connection)
 {
-    {
-        const MHD_ConnectionInfo* info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
-        sockaddr *sa = info->client_addr;
-
-        void* addr = 0;
-        size_t bufferLength;
-        if (sa->sa_family == AF_INET) {
-            sockaddr_in* s = (sockaddr_in*)sa;
-            addr = &s->sin_addr;
-            bufferLength = INET_ADDRSTRLEN;
-        } else if (sa->sa_family == AF_INET6) {
-            sockaddr_in6* s = (sockaddr_in6*)sa;
-            addr = &s->sin6_addr;
-            bufferLength = INET6_ADDRSTRLEN;
-        }
-
-        if (addr) {
-            vector<char> buffer(bufferLength);
-
-            const char *result = inet_ntop(sa->sa_family, addr, buffer.data(), bufferLength);
-            if (result != 0)
-                ip = string(result);
-        }
-    }
+    ip = getIpAddr();
+    parseHeaders();
 }
 
 Connection::~Connection()
 {
     if (pp) MHD_destroy_post_processor(pp);
+}
+
+static int parseHeaders_headerValueIterator(void *t,
+        enum MHD_ValueKind kind,
+        const char *key, const char *value) {
+    Connection* c = (Connection*)t;
+    if (!strcmp(key, MHD_HTTP_HEADER_CONTENT_LENGTH)) {
+        c->contentLength = atoll(value);
+    }
+    return MHD_YES;
+};
+
+void Connection::parseHeaders() {
+    MHD_get_connection_values(connection, MHD_HEADER_KIND, &parseHeaders_headerValueIterator, (void*)this);
+}
+
+std::string Connection::getIpAddr() {
+    const MHD_ConnectionInfo* info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
+    sockaddr *sa = info->client_addr;
+
+    void* addr = 0;
+    size_t bufferLength;
+    if (sa->sa_family == AF_INET) {
+        sockaddr_in* s = (sockaddr_in*)sa;
+        addr = &s->sin_addr;
+        bufferLength = INET_ADDRSTRLEN;
+    } else if (sa->sa_family == AF_INET6) {
+        sockaddr_in6* s = (sockaddr_in6*)sa;
+        addr = &s->sin6_addr;
+        bufferLength = INET6_ADDRSTRLEN;
+    }
+
+    if (addr) {
+        vector<char> buffer(bufferLength);
+
+        const char *result = inet_ntop(sa->sa_family, addr, buffer.data(), bufferLength);
+        if (result != 0)
+            return string(result);
+    }
 }
 
 void Connection::reply(int status, const std::string &data) {
@@ -52,12 +70,38 @@ void Connection::reply(int status, const std::string &data) {
     MHD_destroy_response(response);
 }
 
-void Connection::processPostMessage(const char* upload_data, long unsigned int* upload_data_size) {
+static int headerValueIterator(void *t,
+        enum MHD_ValueKind kind,
+        const char *key, const char *value) {
+    cout << "HEADER: " << key << ": " << value << endl;
+    return MHD_YES;
+};
+
+static int postValueIterator(void *t,
+        enum MHD_ValueKind kind,
+        const char *key, const char *value) {
+    cout << "POST: " << key << ": " << value << endl;
+    return MHD_YES;
+};
+
+void Connection::debug(const char* upload_data, long unsigned int* upload_data_size) {
+    cout << "== HEADER DATA ==" << endl;
+    MHD_get_connection_values(connection, MHD_HEADER_KIND, &headerValueIterator, (void*)this);
+    MHD_get_connection_values(connection, MHD_POSTDATA_KIND, &postValueIterator, (void*)this);
+    if (*upload_data_size > 0) {
+        cout << "POST_DATA:" << string(upload_data, *upload_data_size) << endl;
+    }
+    cout << "== END HEADER DATA ==" << endl;
+}
+
+bool Connection::processPostMessage(const char* upload_data, long unsigned int* upload_data_size) {
+    if (dataRead >= contentLength && *upload_data_size == 0) return true;
     if (*upload_data_size > 0) {
         postData << string(upload_data, *upload_data_size);
         dataRead += *upload_data_size;
         *upload_data_size = 0; // we processed the data
     }
+    return dataRead >= contentLength;
 }
 
 void Connection::basicAuthFailed(const std::string& realm, const std::string& reason) {

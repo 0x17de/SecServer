@@ -217,35 +217,38 @@ int main() {
             connection->reply(200, answer.str());
         } else if (url.substr(0, 6) == "/send/") {
             if (!strcmp(method, "POST")) {
-                size_t oldDataRead = connection->dataRead;
-                connection->processPostMessage(upload_data, upload_data_size);
-                if (oldDataRead > 0 && oldDataRead == connection->dataRead) {
-                    string messageText(connection->postData.str());
+                cout << "SEND: " << (size_t)connection << endl;
+                //connection->debug(upload_data, upload_data_size);
+                if (connection->processPostMessage(upload_data, upload_data_size)) {
+                    if (!connection->postMessageProcessed) {
+                        connection->postMessageProcessed = true;
+                        string messageText(connection->postData.str());
 
-                    int commandLength;
-                    string command = "";
-                    if (messageText[0] == '/') {
-                        for (commandLength = 1; commandLength < messageText.size(); ++commandLength) {
-                            if (messageText[commandLength] < 'a' || messageText[commandLength] > 'z')
-                                break;
+                        int commandLength;
+                        string command = "";
+                        if (messageText[0] == '/') {
+                            for (commandLength = 1; commandLength < messageText.size(); ++commandLength) {
+                                if (messageText[commandLength] < 'a' || messageText[commandLength] > 'z')
+                                    break;
+                            }
+                            --commandLength; // started at 1
+                            command = messageText.substr(1, commandLength);
                         }
-                        --commandLength; // started at 1
-                        command = messageText.substr(1, commandLength);
-                    }
-                    if (command == "help") {
-                        addDirectMessage(0, "", user, "== This is the help page ==", 'w');
-                        addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
-                        addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
-                        addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
-                        addDirectMessage(0, "", user, " @all > Notify all users", 'w');
-                    } else if (command == "dm") {
-                        istringstream is(messageText.substr(commandLength + 2));
-                        string to;
-                        getline(is, to, ' ');
-                        if (messageText.size() > commandLength + 3 + to.size())
-                            addDirectMessage(currentUser, user, to, messageText.substr(commandLength + 2 + to.size()), 'w');
-                    } else {
-                        addMessage(user, messageText, 'm');
+                        if (command == "help") {
+                            addDirectMessage(0, "", user, "== This is the help page ==", 'w');
+                            addDirectMessage(0, "", user, " /help [text] > Displays this text", 'w');
+                            addDirectMessage(0, "", user, " /me [text] > DIY", 'w');
+                            addDirectMessage(0, "", user, " /dm [user] [text] > Direct message", 'w');
+                            addDirectMessage(0, "", user, " @all > Notify all users", 'w');
+                        } else if (command == "dm") {
+                            istringstream is(messageText.substr(commandLength + 2));
+                            string to;
+                            getline(is, to, ' ');
+                            if (messageText.size() > commandLength + 3 + to.size())
+                                addDirectMessage(currentUser, user, to, messageText.substr(commandLength + 2 + to.size()), 'w');
+                        } else {
+                            addMessage(user, messageText, 'm');
+                        }
                     }
                     answer << "OK";
                     connection->reply(200, answer.str());
@@ -296,6 +299,7 @@ int main() {
         return MHD_YES;
     };
     server.onComplete = [&](Connection* connection) {
+        cout << "COMPLETE: " << (size_t)connection << endl;
     };
 
     if (server.start(key.c_str(), cert.c_str())) {

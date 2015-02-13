@@ -100,6 +100,7 @@ function replaceUrls(msg) {
 }
 function appendChatMessage(line, status) {
 	if (!status) status = {};
+	var thisStatus = {};
 	var splitLine = line.split("|");
 	var messageIdStr = splitLine.shift();
 	var message = splitLine.join("|");
@@ -122,11 +123,11 @@ function appendChatMessage(line, status) {
 
 	if (myUserName) {
 		if (message.match(new RegExp("(^|[@ ])" + escapeRegExp(myUserName) + "([: ]|$)", "i"))) {
-			status.mentioned = true;
+			thisStatus.mentioned = true;
 		}
 	}
 	if (message.match(new RegExp("(^|[ ])@all([: ]|$)", "i"))) {
-		status.allMentioned = true;
+		thisStatus.allMentioned = true;
 	}
 
 	if (messageType == '-' || messageType == '+') {
@@ -134,19 +135,19 @@ function appendChatMessage(line, status) {
 			addUser(user);
 		else
 			removeUser(user);
-		status.logOnOff = true;
+		thisStatus.logOnOff = true;
 		user = "";
 	} else if (messageType == 'w') {
-		status.dm = true;
+		thisStatus.dm = true;
 	} else {
-		status.message = true;
+		thisStatus.message = true;
 	}
 	if (user == "") user = "System";
 
 	message = htmlEscape(message);
 	message = replaceUrls(message);
 
-	var classType = getClassFromMessageType(messageType, status);
+	var classType = getClassFromMessageType(messageType, thisStatus);
 	if (command == "me") {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td colspan='3' width='100%'><div style='word-break:break-all'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</div></td></tr>');
 	} else if (command == "mono") {
@@ -155,6 +156,7 @@ function appendChatMessage(line, status) {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td width='100%'><div style='word-break:break-all'>" + message + '</div></td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
+	for(var i in thisStatus) status[i] = thisStatus[i];
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 300;
@@ -281,7 +283,7 @@ $(function() {
 		if (lastReadBar) {
 			lastReadBar.remove();
 		} else {
-			lastReadBar = $('<tr><td class="readbar" colspan="5"></td></tr>');
+			lastReadBar = $('<tr><td class="readbar" colspan="5"></td></tr><tr><td class="readbar" colspan="5"></td></tr>');
 		}
 		chatlog.append(lastReadBar);
 		chat.scrollTop(top+chatlog.height()-height);
@@ -349,7 +351,7 @@ function onStyleChange() {
 <div id="users">
 </div>
 <div id="chat">
-<table id="chatlog" style="width:100%">
+<table cellpadding="0" cellspacing="0" id="chatlog" style="width:100%">
 </table>
 </div>
 <div style="clear:both"></div>

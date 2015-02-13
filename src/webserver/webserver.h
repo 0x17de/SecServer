@@ -14,19 +14,24 @@ class User;
 class Connection {
     MHD_Connection* connection;
     MHD_PostProcessor* pp = 0;
+
+    std::string getIpAddr();
+    void parseHeaders();
 public:
     Connection(MHD_Connection* connection);
     ~Connection();
 
+    bool postMessageProcessed = false;
     std::string type = "";
     std::string ip = "";
     std::stringstream postData;
     size_t dataRead = 0;
-    size_t contentLength = 200; // we limit to 200 bytes
+    size_t contentLength = 0;
     User* currentUser = 0;
 
+    void debug(const char* upload_data, long unsigned int* upload_data_size);
     void reply(int status, const std::string& data);
-    void processPostMessage(const char* upload_data, long unsigned int* upload_data_size);
+    bool processPostMessage(const char* upload_data, long unsigned int* upload_data_size);
     void basicAuthFailed(const std::string& realm, const std::string& reason);
     bool requestBasicAuth(std::string& user, std::string& pass);
 };

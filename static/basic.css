@@ -1,15 +1,16 @@
 html,body{background:#eee;margin:5px;padding:0}
 pre{margin:0}
 #chat{height:480px;background:#fff;border:2px inset;overflow:auto}
+#chatlog td{padding:2px}
 #chatlog td:first-child{border-right:1px solid;padding-right:0.3em}
 #chatlog td:last-child{border-left:1px solid;padding-left:0.3em}
 #chatlog tr:nth-child(2n-1) td{background:#f6f6f6}
 .msg_login,.msg_logoff{color:#820}
 .msg,.msg_all,.msg_username{color:#222}
-.msg_all{background:#eef}
-.msg_username{background:#ddf}
+.msg_username td{background:#ddf !important}
+.msg_all td{background:#eef !important}
 .msg_whisper{color:#777;font-style:italic}
 #users{float:right;width:14em;overflow:auto;border:2px inset;height:480px}
 
-.readbar{height:1px;overflow:hidden;background:#ddd;border:0 !important}
+.readbar{height:1px;overflow:hidden;background:#ddd !important;border:0 !important;padding:0 !important}
 
