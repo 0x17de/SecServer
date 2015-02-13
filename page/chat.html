@@ -148,11 +148,11 @@ function appendChatMessage(line, status) {
 
 	var classType = getClassFromMessageType(messageType, status);
 	if (command == "me") {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td colspan='3' width='100%'><div style='word-break:break-all'><nobr><b>*** " + htmlEscape(user) + "</b></nobr> " + message.substr(command.length+2) + '</div></td></tr>');
 	} else if (command == "mono") {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'><tt><pre>" + message.substr(command.length+2) + '</pre></tt></td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'><div style='word-break:break-all'><tt><pre>" + message.substr(command.length+2) + '</pre></tt></div></td></tr>');
 	} else {
-		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'>" + message + '</td></tr>');
+		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td>|</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td>|</td><td width='100%'><div style='word-break:break-all'>" + message + '</div></td></tr>');
 	}
 	if (!focused) ++unreadMessageCount;
 }
@@ -349,7 +349,7 @@ function onStyleChange() {
 <div id="users">
 </div>
 <div id="chat">
-<table id="chatlog" width="100%">
+<table id="chatlog" style="width:100%">
 </table>
 </div>
 <div style="clear:both"></div>
