@@ -1,6 +1,9 @@
 html,body{background:#3f3f3f;color:#dcdccc;margin:5px;padding:0}
 pre{margin:0}
 #chat{height:480px;background:#4f4f4f;border:1px solid #2f2f2f;overflow:auto}
+#chatlog td:first-child{border-right:1px solid #979777;padding-right:0.3em}
+#chatlog td:last-child{border-left:1px solid #979777;padding-left:0.3em}
+#chatlog tr:nth-child(2n-1) td{background:#4a4a4a}
 .msg_login,.msg_logoff{color:#cc8c7c}
 .msg,.msg_all,.msg_username{color:#dcdccc}
 .msg_whisper{color:#979777;font-style:italic}
@@ -12,4 +15,4 @@ a{color:#efdcbc}
 a:visited{color:#cfac9c}
 input{color:#dcdccc;background:#4f4f4f;border:1px solid #2f2f2f}
 
-.readbar{height:1px;overflow:hidden;background:#6f6f6f}
+.readbar{height:1px;overflow:hidden;background:#6f6f6f;border:0 !important}
