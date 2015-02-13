@@ -12,6 +12,7 @@ find_package(LibMicroHTTPD REQUIRED)
 set(SOURCE_FILES
     src/main.cpp
     src/webserver/webserver.cpp src/webserver/webserver.h
+    src/iniparser.cpp src/iniparser.h
 )
 add_executable(SecServer ${SOURCE_FILES})
 target_link_libraries(SecServer ${MHD_LIBRARIES})

@@ -8,7 +8,9 @@
 #include <microhttpd.h>
 #include <stdio.h>
 #include <signal.h>
+
 #include "webserver/webserver.h"
+#include "iniparser.h"
 
 using namespace std;
 
@@ -101,7 +103,21 @@ int main() {
         }
     };
 
-    WebServer server(12321);
+    // Ini variables including their default values
+    int port = 12321;
+    {
+        IniParser iniParser("config.ini");
+        auto globalSectionIt = iniParser.sections.find("");
+        if (globalSectionIt != end(iniParser.sections)) {
+            auto portIt = globalSectionIt->second.data.find("port");
+            if (portIt != end(globalSectionIt->second.data)) {
+                port = stoll(portIt->second);
+            }
+        }
+    }
+    cout << "Starting on port " << port << endl;
+
+    WebServer server(port);
     server.onRequest = [&](Connection* connection, const char* cUrl, const char* method, const char* version, const char* upload_data, long unsigned int* upload_data_size) {
         string url(cUrl);
 
