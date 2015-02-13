@@ -194,7 +194,7 @@ function refreshChat() {
 			}
 
 			if (scrollToBottom)
-				chat.scrollTop(chatlog.height()-chat.height());
+				chat.scrollTop(chatlog.height()-chat.height()+20/*tolerance*/);
 
 			window.setTimeout("refreshChat()", 1000);
 		},
