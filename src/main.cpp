@@ -217,7 +217,6 @@ int main() {
             connection->reply(200, answer.str());
         } else if (url.substr(0, 6) == "/send/") {
             if (!strcmp(method, "POST")) {
-                cout << "SEND: " << (size_t)connection << endl;
                 //connection->debug(upload_data, upload_data_size);
                 if (connection->processPostMessage(upload_data, upload_data_size)) {
                     if (!connection->postMessageProcessed) {
@@ -299,7 +298,6 @@ int main() {
         return MHD_YES;
     };
     server.onComplete = [&](Connection* connection) {
-        cout << "COMPLETE: " << (size_t)connection << endl;
     };
 
     if (server.start(key.c_str(), cert.c_str())) {
