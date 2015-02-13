@@ -21,7 +21,7 @@ IniParser::IniParser(const std::string &fileName) {
             sectionName = line.substr(1, line.length()-1);
             auto sectionIt = sections.find(sectionName);
             if (sectionIt == end(sections)) {
-                sections.emplace(make_pair(sectionName, IniSection()));
+                sections.insert(make_pair(sectionName, IniSection()));
                 section = &sections.at(sectionName);
             } else {
                 section = &sectionIt->second;
