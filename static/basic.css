@@ -1,9 +1,8 @@
 html,body{background:#eee;margin:5px;padding:0}
 pre{margin:0}
 #chat{height:480px;background:#fff;border:2px inset;overflow:auto}
-#chatlog td{padding:2px}
-#chatlog td:first-child{border-right:1px solid;padding-right:0.3em}
-#chatlog td:last-child{border-left:1px solid;padding-left:0.3em}
+#chatlog td{padding:2px 0.3em}
+#chatlog td:first-child, #chatlog td:nth-last-child(2){border-right:1px solid}
 #chatlog tr:nth-child(2n-1) td{background:#f6f6f6}
 .msg_login,.msg_logoff{color:#820}
 .msg,.msg_all,.msg_username{color:#222}
