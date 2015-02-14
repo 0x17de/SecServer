@@ -144,6 +144,7 @@ function appendChatMessage(line, status) {
 	}
 	if (user == "") user = "System";
 
+	var rawMessage = message;
 	message = htmlEscape(message);
 	message = replaceUrls(message);
 
@@ -156,7 +157,7 @@ function appendChatMessage(line, status) {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td width='100%'><div style='word-break:break-all'>" + message + '</div></td></tr>');
 	}
 	if (!focused && thisStatus.message && notificationsEnabled)
-		notify(user, message);
+		notify(user, rawMessage);
 	if (!focused) ++unreadMessageCount;
 	for(var i in thisStatus) status[i] = thisStatus[i];
 }
