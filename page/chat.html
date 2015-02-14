@@ -155,8 +155,14 @@ function appendChatMessage(line, status) {
 	} else {
 		chatlog.append('<tr class="'+classType+'"><td>' + messageTimeStr + "</td><td><nobr><b>" + htmlEscape(user) + "</b></nobr></td><td width='100%'><div style='word-break:break-all'>" + message + '</div></td></tr>');
 	}
+	if (!focused && thisStatus.message && notificationsEnabled)
+		notify(user, message);
 	if (!focused) ++unreadMessageCount;
 	for(var i in thisStatus) status[i] = thisStatus[i];
+}
+var notificationsEnabled=false;
+function notify(user, message) {
+	new Notification("[SecChat] "+user, {body: message});
 }
 function cleanChatMessages() {
 	var chatLinesToKeep = 300;
@@ -328,6 +334,28 @@ $(function() {
 		else
 			$(this).html("Login/-out: Off");
 	});
+	$('#notificationsToggle').click(function() {
+		if (!("Notification" in window)) {
+		    alert("This browser does not support desktop notification");
+			return;
+		} else if (Notification.permission === 'granted') {
+			notificationsEnabled = !notificationsEnabled;
+			if (notificationsEnabled)
+				$(this).html("Notifications: On");
+			else
+				$(this).html("Notifications: Off");
+		} else if (Notification.permission !== 'denied') {
+		    Notification.requestPermission(function (permission) {
+			    if (permission === "granted") {
+					notificationsEnabled = !notificationsEnabled;
+					if (notificationsEnabled)
+						$('#notificationsToggle').html("Notifications: On");
+					else
+						$('#notificationsToggle').html("Notifications: Off");
+			    }
+	    	});
+		}
+	});
 	$('#soundToggle').click();
 	$('#soundToggle').click();
 	$('#soundMentionToggle').click();
@@ -364,6 +392,7 @@ Sound on: <button id='soundToggle'></button>
 <button id='soundDmToggle'></button>
 <button id='soundAllToggle'></button>
 <button id='soundLogOnOffToggle'></button>
+<button id='notificationsToggle'>Notifications: Off</button>
 </div>
 <div>
 Style: <select id='styleSelect' onchange="onStyleChange()">
