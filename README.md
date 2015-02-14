@@ -8,3 +8,6 @@ Login with a username and any password to join the chat.
 - The key must not have a password.
 - Copy config.ini.template to config.ini and make your modifications.
 - The program is yet to be started inside the project root.
+
+## Screenshot
+![Screenshot](http://www.icetruck.de/0/pics/SecServer.png)
